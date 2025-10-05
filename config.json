@@ -12,21 +12,21 @@
   "antiInbox": false,
   "language": "en",
   "notesLanguage": "change to your language with ISO 639-1 code, available languages: vi (Vietnamese), en (English)",
-  "nickNameBot": "✨ 𝐒𝐇𝐈𝐙𝐔𝐊𝐀 🕊️",
-  "prefix": "-",
+  "nickNameBot": "✨ 𝐃𝐢𝐠𝐢𝐭𝐚𝐥 𝐀𝐢  🕊️",
+  "prefix": ".",
   "adminOnly": {
     "enable": false,
     "ignoreCommand": []
   },
   "adminBot": [
-    "100078859776449",
-    "100078859776449"
+    "61580156099497",
+    "61579763841166"
   ],
   "whiteListMode": {
     "enable": false,
     "whiteListIds": [
-      "100078859776449",
-      "100078859776449"
+      "61580156099497",
+      "61579763841166"
     ],
     "notes": "if you enable this feature, only the ids in the whiteListIds list can use the bot"
   },
