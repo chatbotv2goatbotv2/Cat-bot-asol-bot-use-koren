@@ -1,37 +1,63 @@
-module.exports = {
-  config: {
-    name: "help",
-    aliases: ["menu", "commands"],
-    version: "3.3",
-    author: "Helal Islam",
-    cooldowns: 5,
-    role: 0,
-    shortDescription: "Show all available commands",
-    longDescription: "",
-    category: "system"
-  },
+const fs = require("fs");
+const path = require("path");
 
-  onStart: async function ({ message, commands }) {
-    const cmds = [...commands.values()]
-      .map(cmd => `⚡ ${cmd.config.name}`)
-      .join("\n");
+module.exports.config = {
+  name: "help",
+  version: "6.0",
+  author: "Helal Islam",
+  credits: "Helal Islam",
+  role: 0,
+  countDown: 5,
+  shortDescription: "Show all available commands",
+  longDescription: "Auto-detect all bot commands and display them in a stylish digital menu",
+  category: "system",
+  guide: {
+    en: "{pn}"
+  }
+};
 
-    const msg = 
-`╭══════════════════════════╮
-        🤖 𝗗𝗜𝗚𝗜𝗧𝗔𝗟 𝗔𝗜 𝗠𝗘𝗡𝗨 💠
-╰══════════════════════════╯
+module.exports.run = async function ({ api, event }) {
+  try {
+    const commandsPath = path.join(__dirname, "/");
+    const files = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js") && file !== "help.js");
 
-🌟 𝗔𝗩𝗔𝗜𝗟𝗔𝗕𝗟𝗘 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 🌟
-━━━━━━━━━━━━━━━━━━
-${cmds}
-━━━━━━━━━━━━━━━━━━
+    let commandNames = [];
+    for (const file of files) {
+      try {
+        const cmd = require(path.join(commandsPath, file));
+        if (cmd.config && cmd.config.name) commandNames.push(cmd.config.name);
+      } catch (err) {
+        console.log(`⚠️ Error loading: ${file}`);
+      }
+    }
 
-⚙️ 𝗣𝗥𝗘𝗙𝗜𝗫: .
-💬 𝗘𝗫𝗔𝗠𝗣𝗟𝗘: .help
+    commandNames.sort();
 
-👑 𝗗𝗘𝗩𝗘𝗟𝗢𝗣𝗘𝗗 𝗕𝗬: 𝗛𝗘𝗟𝗔𝗟 𝗜𝗦𝗟𝗔𝗠 💻
-🔰 𝗣𝗢𝗪𝗘𝗥𝗘𝗗 𝗕𝗬: 𝗛𝗘𝗟𝗔𝗟 𝗜𝗦𝗟𝗔𝗠 ⚡`;
+    let menuList = "";
+    for (const name of commandNames) {
+      menuList += `⚡ ${name}\n`;
+    }
 
-    message.reply(msg);
+    const msg = `
+╭━━━━━━━━━━━━━━━━━━━━━━━╮
+   ⚡ DIGITAL AI MENU ⚡
+╰━━━━━━━━━━━━━━━━━━━━━━━╯
+
+💠 𝗔𝘃𝗮𝗶𝗹𝗮𝗯𝗹𝗲 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀 💠
+
+${menuList || "❌ No commands found!"}
+
+━━━━━━━━━━━━━━━━━━━━━━━
+⚙️ Developed by: Helal Islam  
+🚀 Powered by: Digital AI System  
+━━━━━━━━━━━━━━━━━━━━━━━
+💫 Prefix: ( . ) | Version: 6.0  
+━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+    return api.sendMessage(msg, event.threadID, event.messageID);
+  } catch (e) {
+    console.error(e);
+    return api.sendMessage("❌ Error loading commands list!", event.threadID);
   }
 };
