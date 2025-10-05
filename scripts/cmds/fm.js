@@ -1,6 +1,8 @@
-// fm.js (Author: Helal)
-// Tries: 1) global.GoatBot.utils.combineImages (no extra install), 2) Jimp-based collage,
-// fallback -> safe text summary. Paste this in your commands folder.
+// fm.js — multi‑fallback, paste-only. Author: Helal
+// Paste this into your commands folder and run {prefix}fm
+
+const fs = require("fs");
+const path = require("path");
 
 module.exports = {
   config: {
@@ -8,156 +10,161 @@ module.exports = {
     aliases: ["funmosaic", "fmpic"],
     version: "1.0",
     author: "Helal",
-    shortDescription: "Create a group profile collage with Neon Circles.",
-    longDescription: "Tries multiple strategies to produce a collage: uses built-in utils if present, else Jimp, else sends diagnostic fallback.",
+    shortDescription: "Create a group profile collage with Neon Circles (multi-fallback).",
+    longDescription: "Tries built-in utils, else generates an SVG collage (no extra installs). Admin=red, Active=blue, Others=purple.",
     category: "fun",
     guide: "{pn}fm"
   },
 
-  onStart: async function({ message, api, args, prefix }) {
+  onStart: async function({ message, api }) {
     try {
       const threadID = message.threadID;
-      const threadInfo = await (api.getThreadInfo ? api.getThreadInfo(threadID).catch(()=>null) : Promise.resolve(null));
-      if (!threadInfo || !threadInfo.participants) {
-        return message.reply("❌ Thread info not available. `api.getThreadInfo` pailam na. Bot permission/endpoint check korun. Credit: Helal");
+      // Try to get thread info via common methods
+      let threadInfo = null;
+      const tryCalls = [
+        () => api.getThreadInfo ? api.getThreadInfo(threadID) : Promise.reject("no getThreadInfo"),
+        () => api.getThreadInfoV2 ? api.getThreadInfoV2(threadID) : Promise.reject("no getThreadInfoV2"),
+        () => api.getThread ? api.getThread(threadID) : Promise.reject("no getThread"),
+        () => api.getThreadMembers ? api.getThreadMembers(threadID) : Promise.reject("no getThreadMembers"),
+        () => api.getThreadList ? api.getThreadList() : Promise.reject("no getThreadList"),
+        () => api.getUserInfo ? api.getUserInfo(threadID) : Promise.reject("no getUserInfo")
+      ];
+
+      for (let fn of tryCalls) {
+        try {
+          const res = await fn();
+          if (res && (Array.isArray(res) || res.participants || res.members || res.users || res.thread_info)) {
+            threadInfo = res;
+            break;
+          }
+        } catch (e) {
+          // ignore and continue trying other methods
+        }
       }
 
-      const members = threadInfo.participants; // expect array of objects with id/isAdmin/isActive fields
-      // Normalize members to have id + flags
-      const normalized = members.map(m => ({
-        id: m.id || m.userID || m.user_id || m.uid,
-        isAdmin: !!m.isAdmin || !!m.is_admin || !!m.admin,
-        isActive: !!m.isActive || !!m.is_active || false,
-        name: m.name || m.fullName || m.userName || (m.id ? String(m.id) : "unknown")
-      }));
+      if (!threadInfo) {
+        return message.reply("❌ Thread info not available. `api.getThreadInfo`/alternatives pailam na. Please make bot admin or ensure your bot framework supports thread info. Credit: Helal");
+      }
 
-      // --- Try method A: GoatBot provided util combineImages (no install) ---
+      // Normalize participants array
+      let participants = [];
+      if (Array.isArray(threadInfo)) participants = threadInfo;
+      else if (threadInfo.participants) participants = threadInfo.participants;
+      else if (threadInfo.members) participants = threadInfo.members;
+      else if (threadInfo.users) participants = threadInfo.users;
+      else {
+        // try to find largest array property
+        const keys = Object.keys(threadInfo);
+        let maxArr = null;
+        for (const k of keys) {
+          if (Array.isArray(threadInfo[k]) && (!maxArr || threadInfo[k].length > maxArr.length)) maxArr = threadInfo[k];
+        }
+        if (maxArr) participants = maxArr;
+      }
+
+      if (!participants || participants.length === 0) {
+        return message.reply("❌ Participants not found in thread info. Check bot permissions. Credit: Helal");
+      }
+
+      // Build normalized member info: id, name, isAdmin, isActive
+      const members = participants.map((m, idx) => {
+        // try multiple common id/name fields
+        const id = m.id || m.userID || m.user_id || m.uid || m.ID || m.user || null;
+        const name = m.name || m.fullName || m.userName || m.user || (id ? String(id) : `User${idx+1}`);
+        const isAdmin = !!(m.isAdmin || m.admin || m.is_admin || m.administer || m.type === 'ADMIN');
+        const isActive = !!(m.isActive || m.is_active || m.online || m.active || false);
+        return { id, name, isAdmin, isActive };
+      });
+
+      // Build image objects (avatar URLs)
+      const images = members.map(m => {
+        const url = m.id ? `https://graph.facebook.com/${m.id}/picture?width=512&height=512` : null;
+        const color = m.isAdmin ? "#FF0000" : (m.isActive ? "#0000FF" : "#800080");
+        return { id: m.id, name: m.name, url, color, round: true };
+      });
+
+      // --- Try method A: use built-in utils if available ---
       try {
-        const utils = global?.GoatBot?.utils || (global?.goatbot && global.goatbot.utils);
+        const utils = global?.GoatBot?.utils || global?.goatbot?.utils;
         if (utils && typeof utils.combineImages === "function" && typeof utils.writeTempImage === "function") {
-          // Build images array accepted by combineImages: either urls or { color, url, round }
-          const images = normalized.map(m => {
-            let color = "#800080"; // purple
-            if (m.isAdmin) color = "#FF0000";
-            else if (m.isActive) color = "#0000FF";
-            const url = m.id ? `https://graph.facebook.com/${m.id}/picture?width=512&height=512` : null;
-            return { url, color, round: true };
-          });
-
-          // combineImages(images, width, height, cellW, cellH, round)
           const size = 1500;
           const perRow = Math.ceil(Math.sqrt(images.length));
           const cell = Math.floor(size / perRow);
+          // combineImages expects array of {url,color,round} in many implementations
           const combined = await utils.combineImages(images, size, size, cell, cell, true);
           const outPath = await utils.writeTempImage(combined, `group_collage_fm_${Date.now()}.png`);
           return message.reply({ attachment: require("fs").createReadStream(outPath) });
         }
-      } catch (eA) {
-        // ignore, try next method
-        console.warn("fm.js: combineImages failed:", eA);
-      }
-
-      // --- Try method B: Jimp-based (if Jimp installed in runtime) ---
-      let Jimp = null;
-      try {
-        Jimp = require("jimp");
       } catch (e) {
-        Jimp = null;
+        // ignore and continue to SVG fallback
       }
 
-      if (Jimp) {
-        // create collage with real profile pics (with fallbacks)
-        const canvasSize = 1400;
-        const perRow = Math.ceil(Math.sqrt(normalized.length));
-        const cell = Math.floor(canvasSize / perRow);
-        const padding = Math.max(6, Math.floor(cell * 0.06));
-        const inner = cell - padding * 2;
-        const outImage = new Jimp(canvasSize, canvasSize, 0x00000000);
+      // --- Method B: Create an SVG collage (no external libs) ---
+      // SVG will reference the profile image URLs directly as <image href="..."> inside circles.
+      // Many chat clients accept SVG attachments; if client doesn't render, user will still get file.
+      const size = 1500;
+      const perRow = Math.ceil(Math.sqrt(images.length));
+      const cell = Math.floor(size / perRow);
+      const radius = Math.floor(cell * 0.42);
+      const gap = cell;
+      let svgParts = [];
+      svgParts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`);
+      // background
+      svgParts.push(`<rect width="100%" height="100%" fill="#0b0b0b"/>`);
 
-        // helper mask
-        const createMask = (size) => {
-          const mask = new Jimp(size, size, 0x00000000);
-          const r = size / 2;
-          mask.scan(0, 0, size, size, (x, y, idx) => {
-            const dx = x - r, dy = y - r;
-            if (dx*dx + dy*dy <= r*r) mask.bitmap.data[idx+3] = 255;
-          });
-          return mask;
-        };
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        const row = Math.floor(i / perRow);
+        const col = i % perRow;
+        const cx = Math.round(col * gap + gap / 2);
+        const cy = Math.round(row * gap + gap / 2);
 
-        const avatarMask = createMask(inner);
-        const glowSize = Math.max(8, Math.round(inner * 0.12));
-        const glowTotal = inner + glowSize * 2;
-        const glowMask = createMask(glowTotal);
-
-        const fetchAvatar = async (id, colorHex) => {
-          if (!id) return new Jimp(inner, inner, colorHex);
-          const url = `https://graph.facebook.com/${id}/picture?width=512&height=512`;
-          try {
-            const img = await Jimp.read(url);
-            img.cover(inner, inner);
-            return img;
-          } catch (e) {
-            // fallback solid color
-            return new Jimp(inner, inner, colorHex);
-          }
-        };
-
-        for (let i = 0; i < normalized.length; i++) {
-          const m = normalized[i];
-          const row = Math.floor(i / perRow);
-          const col = i % perRow;
-          const cx = Math.round(col * cell + cell/2);
-          const cy = Math.round(row * cell + cell/2);
-
-          let colorHex = 0xFF8000FF; // fallback ARGB
-          // choose color hex ARGB for Jimp constructor: 0xRRGGBBAA
-          if (m.isAdmin) colorHex = 0xFF0000FF; // red
-          else if (m.isActive) colorHex = 0x0000FFFF; // blue
-          else colorHex = 0x800080FF; // purple
-
-          const avatar = await fetchAvatar(m.id, colorHex);
-          avatar.mask(avatarMask, 0, 0);
-
-          const glow = new Jimp(glowTotal, glowTotal, colorHex);
-          glow.mask(glowMask, 0, 0);
-          glow.opacity(0.55);
-
-          const gX = Math.round(cx - glowTotal/2);
-          const gY = Math.round(cy - glowTotal/2);
-          const aX = Math.round(cx - inner/2);
-          const aY = Math.round(cy - inner/2);
-
-          outImage.composite(glow, gX, gY);
-          outImage.composite(avatar, aX, aY);
+        // unique id for clipPath
+        const clipId = `c${i}`;
+        // circle background (glow) using colored circle with blur filter (SVG filter)
+        const color = img.color;
+        // Add clipPath & filter per image
+        svgParts.push(`<defs>
+  <clipPath id="${clipId}"><circle cx="${cx}" cy="${cy}" r="${radius}"/></clipPath>
+  <filter id="f${i}" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="${Math.max(6, Math.round(radius*0.12))}" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="b"/></feMerge>
+  </filter>
+</defs>`);
+        // glow circle
+        svgParts.push(`<circle cx="${cx}" cy="${cy}" r="${radius+8}" fill="${color}" opacity="0.45" filter="url(#f${i})"/>`);
+        // image (if url present) else solid circle
+        if (img.url) {
+          // place image centered, but clipped
+          const imgSize = radius * 2;
+          const imgX = cx - radius;
+          const imgY = cy - radius;
+          // Use preserveAspectRatio slice to cover
+          svgParts.push(`<image x="${imgX}" y="${imgY}" width="${imgSize}" height="${imgSize}" href="${img.url}" clip-path="url(#${clipId})" preserveAspectRatio="xMidYMid slice"/>`);
+        } else {
+          // fallback solid fill
+          svgParts.push(`<circle cx="${cx}" cy="${cy}" r="${radius-2}" fill="${color}" clip-path="url(#${clipId})"/>`);
         }
-
-        const outPath = __dirname + `/group_collage_fm_${Date.now()}.png`;
-        await outImage.writeAsync(outPath);
-        return message.reply({ attachment: require("fs").createReadStream(outPath) });
+        // optional small overlay with initial or name
+        const initial = (img.name || "U").trim().charAt(0).toUpperCase();
+        svgParts.push(`<text x="${cx}" y="${cy + radius + 14}" text-anchor="middle" font-size="${Math.max(12, Math.round(radius*0.2))}" fill="#ffffff" font-family="Arial">${initial}</text>`);
       }
 
-      // --- Fallback method C: No image util available => send diagnostic + small placeholder summary ---
-      const admins = normalized.filter(m=>m.isAdmin).map(m=>m.name).slice(0,50);
-      const actives = normalized.filter(m=>m.isActive && !m.isAdmin).map(m=>m.name).slice(0,50);
-      const othersCount = normalized.filter(m=>!m.isAdmin && !m.isActive).length;
+      svgParts.push(`<text x="${size-10}" y="${size-10}" font-size="14" fill="#ffffff" text-anchor="end" font-family="Arial">Credit: Helal</text>`);
+      svgParts.push(`</svg>`);
+      const svgContent = svgParts.join("\n");
 
-      let txt = `⚠️ Unable to generate collage automatically.\n\n`;
-      txt += `Reason: No image utility found in bot environment.\n\n`;
-      txt += `Admins (${admins.length}): ${admins.join(", ") || "None"}\n`;
-      txt += `Active (${actives.length}): ${actives.join(", ") || "None"}\n`;
-      txt += `Others: ${othersCount}\n\n`;
-      txt += `Options to get full image:\n`;
-      txt += `1) If your bot has a built-in util: ensure \`global.GoatBot.utils.combineImages\` & \`writeTempImage\` exist.\n`;
-      txt += `2) Install Jimp on your bot host: run \`npm install jimp\` then re-run this command.\n`;
-      txt += `3) If you want, paste the output of this message here—ami tarpor apnar exact environment onujayi final file dibo.\n\n`;
-      txt += `Credit: Helal`;
+      // write SVG file
+      const outName = `group_collage_fm_${Date.now()}.svg`;
+      const outPath = path.join(__dirname, outName);
+      fs.writeFileSync(outPath, svgContent, "utf8");
 
-      return message.reply(txt);
+      // send SVG as attachment
+      return message.reply({ attachment: fs.createReadStream(outPath) });
 
     } catch (err) {
-      console.error("fm.js unexpected error:", err);
-      return message.reply("❌ Unexpected error while creating collage. Ami try korlam but problem holo. Credit: Helal");
+      console.error("fm.js error final fallback:", err);
+      return message.reply("❌ Unexpected error while creating collage. Ami try korlam but problem holo. Please send fmdebug2 output if still failing. Credit: Helal");
     }
   }
 };
