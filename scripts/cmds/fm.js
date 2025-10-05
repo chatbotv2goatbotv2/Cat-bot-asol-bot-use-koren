@@ -1,115 +1,89 @@
-const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
-const { createCanvas, loadImage } = require("canvas");
+const Jimp = require("jimp");
 
 module.exports = {
   config: {
     name: "fm",
-    version: "4.0",
-    author: "Helal Islam",
-    description: "Premium fullscreen collage of all group members' profile pictures with round shapes and stylish layout",
-    commandCategory: "GROUP",
-    usages: ".fm",
-    cooldowns: 10
+    aliases: ["funmosaic", "fmpic"],
+    version: "1.0",
+    author: "Helal", // Author credit
+    shortDescription: "Create a group profile collage with neon circles.",
+    longDescription: "Collect all group members profile pics and create a single round collage with neon circle glow effect: red for admin, blue for active, purple for others.",
+    category: "fun",
+    guide: "{pn}fm"
   },
 
-  onStart: async function({ api, event }) {
+  onStart: async function({ message, api }) {
     try {
-      const info = await api.getThreadInfo(event.threadID);
-      if (!info || !info.participantIDs) {
-        return api.sendMessage("⚠️ Couldn't get group members.", event.threadID);
-      }
+      const threadID = message.threadID;
+      const threadInfo = await api.getThreadInfo(threadID);
+      const members = threadInfo.participants;
 
-      const members = info.participantIDs || [];
-      const admins = info.adminIDs?.map(a => a.id) || [];
-      const groupName = info.threadName || "Unnamed Group";
+      // --- Canvas setup ---
+      const canvasSize = 1500;
+      const image = new Jimp(canvasSize, canvasSize, 0x00000000);
 
-      if (members.length === 0)
-        return api.sendMessage("⚠️ No members found.", event.threadID);
-
-      api.sendMessage(`🎨 Preparing premium collage of ${members.length} members...`, event.threadID);
-
-      const width = 1920, height = 1080;
-      const canvas = createCanvas(width, height);
-      const ctx = canvas.getContext("2d");
-
-      // Premium gradient background
-      const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, "#1e3c72");
-      gradient.addColorStop(1, "#2a5298");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
-
-      // Group name header
-      ctx.font = "bold 80px Sans-serif";
-      ctx.fillStyle = "#ffffff";
-      ctx.textAlign = "center";
-      ctx.fillText(`🌌 ${groupName.toUpperCase()} 🌌`, width / 2, 100);
-
-      // Profile pics placement
-      const radius = 70;
+      const radius = 60;
       const margin = 20;
-      let x = radius + margin;
-      let y = 200;
+      const membersPerRow = Math.ceil(Math.sqrt(members.length));
+      const step = (canvasSize - margin * 2) / membersPerRow;
 
-      for (let i = 0; i < members.length; i++) {
-        try {
-          const id = members[i];
-          const url = `https://graph.facebook.com/${id}/picture?width=200&height=200&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
-          const res = await axios.get(url, { responseType: "arraybuffer" });
-          const img = await loadImage(Buffer.from(res.data, "binary"));
+      // --- Draw round profile with neon circle ---
+      async function drawNeonProfile(x, y, url, neonColor) {
+        const avatar = await Jimp.read(url);
+        avatar.resize(radius * 2, radius * 2);
 
-          // Draw round profile pic
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(x, y, radius, 0, Math.PI * 2, true);
-          ctx.closePath();
-          ctx.clip();
-          ctx.drawImage(img, x - radius, y - radius, radius * 2, radius * 2);
-          ctx.restore();
+        // Circular mask
+        const mask = new Jimp(radius * 2, radius * 2, 0x00000000);
+        mask.scan(0, 0, mask.bitmap.width, mask.bitmap.height, function(px, py, idx) {
+          const dx = px - radius;
+          const dy = py - radius;
+          if (dx * dx + dy * dy <= radius * radius) mask.bitmap.data[idx + 3] = 255;
+        });
+        avatar.mask(mask, 0, 0);
 
-          // White border
-          ctx.beginPath();
-          ctx.arc(x, y, radius, 0, Math.PI * 2, true);
-          ctx.lineWidth = 4;
-          ctx.strokeStyle = "#ffffff";
-          ctx.stroke();
+        // Neon glow border
+        const glowSize = 12;
+        const glow = new Jimp(radius * 2 + glowSize * 2, radius * 2 + glowSize * 2, 0x00000000);
 
-          // Next position
-          x += radius * 2 + margin;
-          if (x + radius > width) {
-            x = radius + margin;
-            y += radius * 2 + margin;
-          }
-        } catch (err) {
-          console.log("⚠️ Error fetching profile:", err.message);
-        }
+        const glowCircle = new Jimp(glow.bitmap.width, glow.bitmap.height, neonColor);
+        const glowMask = new Jimp(glow.bitmap.width, glow.bitmap.height, 0x00000000);
+        const newRadius = radius + glowSize;
+        glowMask.scan(0, 0, glowMask.bitmap.width, glowMask.bitmap.height, function(px, py, idx) {
+          const dx = px - newRadius;
+          const dy = py - newRadius;
+          if (dx * dx + dy * dy <= newRadius * newRadius) glowMask.bitmap.data[idx + 3] = 150; // semi-transparent glow
+        });
+        glowCircle.mask(glowMask, 0, 0);
+        glow.composite(glowCircle, 0, 0);
+
+        image.composite(glow, x - newRadius, y - newRadius);
+        image.composite(avatar, x - radius, y - radius);
       }
 
-      // Footer with emojis & info
-      const adminCount = admins.length;
-      const memberCount = members.length;
-      ctx.font = "bold 40px Sans-serif";
-      ctx.fillStyle = "#ffffff";
-      ctx.textAlign = "center";
-      ctx.fillText(`👑 Admins: ${adminCount} | 👥 Members: ${memberCount} | 🚀 Powered by Digital AI`, width / 2, height - 50);
+      // --- Place members in grid ---
+      for (let i = 0; i < members.length; i++) {
+        const member = members[i];
+        const row = Math.floor(i / membersPerRow);
+        const col = i % membersPerRow;
+        const x = margin + col * step + step / 2;
+        const y = margin + row * step + step / 2;
 
-      const out = path.join(__dirname, `fm_fullscreen_${Date.now()}.jpg`);
-      fs.writeFileSync(out, canvas.toBuffer("image/jpeg"));
+        // Neon colors
+        let color = 0x800080FF; // Purple
+        if (member.isAdmin) color = 0xFF0000FF; // Red
+        else if (member.isActive) color = 0x0000FFFF; // Blue
 
-      await api.sendMessage(
-        {
-          body: `🌟 ${groupName} - Fullscreen Collage 🌟\n👑 Admins: ${adminCount}\n👥 Members: ${memberCount}`,
-          attachment: fs.createReadStream(out)
-        },
-        event.threadID
-      );
+        const profileURL = `https://graph.facebook.com/${member.id}/picture?width=200&height=200`;
+        await drawNeonProfile(x, y, profileURL, color);
+      }
 
-      fs.unlinkSync(out);
-    } catch (e) {
-      console.error(e);
-      api.sendMessage("❌ Error creating premium collage.", event.threadID);
+      const outPath = __dirname + "/group_collage.png";
+      await image.writeAsync(outPath);
+
+      return message.reply({ attachment: require("fs").createReadStream(outPath) });
+    } catch (err) {
+      console.error(err);
+      return message.reply("❌ Error creating collage. Credit: Helal");
     }
   }
 };
