@@ -1,170 +1,80 @@
-// fm.js — multi‑fallback, paste-only. Author: Helal
-// Paste this into your commands folder and run {prefix}fm
-
-const fs = require("fs");
-const path = require("path");
+const Canvas = require("canvas");
+const axios = require("axios");
 
 module.exports = {
   config: {
     name: "fm",
-    aliases: ["funmosaic", "fmpic"],
+    aliases: ["fmcollage", "profilecollage"],
     version: "1.0",
     author: "Helal",
-    shortDescription: "Create a group profile collage with Neon Circles (multi-fallback).",
-    longDescription: "Tries built-in utils, else generates an SVG collage (no extra installs). Admin=red, Active=blue, Others=purple.",
+    shortDescription: "Create Neon Circle Profile Collage of group members",
+    longDescription: "Generates a round collage of group member profile pictures with neon rings",
     category: "fun",
     guide: "{pn}fm"
   },
 
-  onStart: async function({ message, api }) {
+  onStart: async function({ message, api, args, prefix }) {
     try {
       const threadID = message.threadID;
-      // Try to get thread info via common methods
-      let threadInfo = null;
-      const tryCalls = [
-        () => api.getThreadInfo ? api.getThreadInfo(threadID) : Promise.reject("no getThreadInfo"),
-        () => api.getThreadInfoV2 ? api.getThreadInfoV2(threadID) : Promise.reject("no getThreadInfoV2"),
-        () => api.getThread ? api.getThread(threadID) : Promise.reject("no getThread"),
-        () => api.getThreadMembers ? api.getThreadMembers(threadID) : Promise.reject("no getThreadMembers"),
-        () => api.getThreadList ? api.getThreadList() : Promise.reject("no getThreadList"),
-        () => api.getUserInfo ? api.getUserInfo(threadID) : Promise.reject("no getUserInfo")
-      ];
+      const threadInfo = await api.getThreadInfo(threadID);
+      const members = threadInfo.participants || [];
 
-      for (let fn of tryCalls) {
+      if (!members.length) return message.reply("❌ No members found.");
+
+      // --- Load profile pics ---
+      const images = [];
+      for (let mem of members) {
         try {
-          const res = await fn();
-          if (res && (Array.isArray(res) || res.participants || res.members || res.users || res.thread_info)) {
-            threadInfo = res;
-            break;
-          }
+          const userInfo = await api.getUserInfo(mem.id);
+          const picURL = userInfo[mem.id].profilePicUrl;
+          const img = await Canvas.loadImage(picURL);
+          images.push({ id: mem.id, img });
         } catch (e) {
-          // ignore and continue trying other methods
+          console.log("Profile pic load failed for: " + mem.id);
         }
       }
 
-      if (!threadInfo) {
-        return message.reply("❌ Thread info not available. `api.getThreadInfo`/alternatives pailam na. Please make bot admin or ensure your bot framework supports thread info. Credit: Helal");
-      }
+      // --- Canvas setup ---
+      const size = 600;
+      const canvas = Canvas.createCanvas(size, size);
+      const ctx = canvas.getContext("2d");
 
-      // Normalize participants array
-      let participants = [];
-      if (Array.isArray(threadInfo)) participants = threadInfo;
-      else if (threadInfo.participants) participants = threadInfo.participants;
-      else if (threadInfo.members) participants = threadInfo.members;
-      else if (threadInfo.users) participants = threadInfo.users;
-      else {
-        // try to find largest array property
-        const keys = Object.keys(threadInfo);
-        let maxArr = null;
-        for (const k of keys) {
-          if (Array.isArray(threadInfo[k]) && (!maxArr || threadInfo[k].length > maxArr.length)) maxArr = threadInfo[k];
-        }
-        if (maxArr) participants = maxArr;
-      }
+      // --- Draw neon circles and images ---
+      const total = images.length;
+      const center = size / 2;
+      const radius = 200;
 
-      if (!participants || participants.length === 0) {
-        return message.reply("❌ Participants not found in thread info. Check bot permissions. Credit: Helal");
-      }
+      images.forEach((member, idx) => {
+        const angle = (idx / total) * 2 * Math.PI;
+        const x = center + radius * Math.cos(angle);
+        const y = center + radius * Math.sin(angle);
 
-      // Build normalized member info: id, name, isAdmin, isActive
-      const members = participants.map((m, idx) => {
-        // try multiple common id/name fields
-        const id = m.id || m.userID || m.user_id || m.uid || m.ID || m.user || null;
-        const name = m.name || m.fullName || m.userName || m.user || (id ? String(id) : `User${idx+1}`);
-        const isAdmin = !!(m.isAdmin || m.admin || m.is_admin || m.administer || m.type === 'ADMIN');
-        const isActive = !!(m.isActive || m.is_active || m.online || m.active || false);
-        return { id, name, isAdmin, isActive };
+        // Draw neon circle
+        ctx.beginPath();
+        ctx.arc(x, y, 35, 0, 2 * Math.PI);
+
+        if (threadInfo.adminIDs?.some(a => a.id === member.id)) ctx.strokeStyle = "red"; // admin
+        else if (member.id === message.senderID) ctx.strokeStyle = "blue"; // active sender
+        else ctx.strokeStyle = "purple"; // others
+
+        ctx.lineWidth = 5;
+        ctx.stroke();
+
+        // Draw profile pic inside circle
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, 30, 0, 2 * Math.PI);
+        ctx.clip();
+        ctx.drawImage(member.img, x - 30, y - 30, 60, 60);
+        ctx.restore();
       });
 
-      // Build image objects (avatar URLs)
-      const images = members.map(m => {
-        const url = m.id ? `https://graph.facebook.com/${m.id}/picture?width=512&height=512` : null;
-        const color = m.isAdmin ? "#FF0000" : (m.isActive ? "#0000FF" : "#800080");
-        return { id: m.id, name: m.name, url, color, round: true };
-      });
-
-      // --- Try method A: use built-in utils if available ---
-      try {
-        const utils = global?.GoatBot?.utils || global?.goatbot?.utils;
-        if (utils && typeof utils.combineImages === "function" && typeof utils.writeTempImage === "function") {
-          const size = 1500;
-          const perRow = Math.ceil(Math.sqrt(images.length));
-          const cell = Math.floor(size / perRow);
-          // combineImages expects array of {url,color,round} in many implementations
-          const combined = await utils.combineImages(images, size, size, cell, cell, true);
-          const outPath = await utils.writeTempImage(combined, `group_collage_fm_${Date.now()}.png`);
-          return message.reply({ attachment: require("fs").createReadStream(outPath) });
-        }
-      } catch (e) {
-        // ignore and continue to SVG fallback
-      }
-
-      // --- Method B: Create an SVG collage (no external libs) ---
-      // SVG will reference the profile image URLs directly as <image href="..."> inside circles.
-      // Many chat clients accept SVG attachments; if client doesn't render, user will still get file.
-      const size = 1500;
-      const perRow = Math.ceil(Math.sqrt(images.length));
-      const cell = Math.floor(size / perRow);
-      const radius = Math.floor(cell * 0.42);
-      const gap = cell;
-      let svgParts = [];
-      svgParts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`);
-      // background
-      svgParts.push(`<rect width="100%" height="100%" fill="#0b0b0b"/>`);
-
-      for (let i = 0; i < images.length; i++) {
-        const img = images[i];
-        const row = Math.floor(i / perRow);
-        const col = i % perRow;
-        const cx = Math.round(col * gap + gap / 2);
-        const cy = Math.round(row * gap + gap / 2);
-
-        // unique id for clipPath
-        const clipId = `c${i}`;
-        // circle background (glow) using colored circle with blur filter (SVG filter)
-        const color = img.color;
-        // Add clipPath & filter per image
-        svgParts.push(`<defs>
-  <clipPath id="${clipId}"><circle cx="${cx}" cy="${cy}" r="${radius}"/></clipPath>
-  <filter id="f${i}" x="-50%" y="-50%" width="200%" height="200%">
-    <feGaussianBlur stdDeviation="${Math.max(6, Math.round(radius*0.12))}" result="b"/>
-    <feMerge><feMergeNode in="b"/><feMergeNode in="b"/></feMerge>
-  </filter>
-</defs>`);
-        // glow circle
-        svgParts.push(`<circle cx="${cx}" cy="${cy}" r="${radius+8}" fill="${color}" opacity="0.45" filter="url(#f${i})"/>`);
-        // image (if url present) else solid circle
-        if (img.url) {
-          // place image centered, but clipped
-          const imgSize = radius * 2;
-          const imgX = cx - radius;
-          const imgY = cy - radius;
-          // Use preserveAspectRatio slice to cover
-          svgParts.push(`<image x="${imgX}" y="${imgY}" width="${imgSize}" height="${imgSize}" href="${img.url}" clip-path="url(#${clipId})" preserveAspectRatio="xMidYMid slice"/>`);
-        } else {
-          // fallback solid fill
-          svgParts.push(`<circle cx="${cx}" cy="${cy}" r="${radius-2}" fill="${color}" clip-path="url(#${clipId})"/>`);
-        }
-        // optional small overlay with initial or name
-        const initial = (img.name || "U").trim().charAt(0).toUpperCase();
-        svgParts.push(`<text x="${cx}" y="${cy + radius + 14}" text-anchor="middle" font-size="${Math.max(12, Math.round(radius*0.2))}" fill="#ffffff" font-family="Arial">${initial}</text>`);
-      }
-
-      svgParts.push(`<text x="${size-10}" y="${size-10}" font-size="14" fill="#ffffff" text-anchor="end" font-family="Arial">Credit: Helal</text>`);
-      svgParts.push(`</svg>`);
-      const svgContent = svgParts.join("\n");
-
-      // write SVG file
-      const outName = `group_collage_fm_${Date.now()}.svg`;
-      const outPath = path.join(__dirname, outName);
-      fs.writeFileSync(outPath, svgContent, "utf8");
-
-      // send SVG as attachment
-      return message.reply({ attachment: fs.createReadStream(outPath) });
+      const buffer = canvas.toBuffer();
+      return message.reply({ attachment: buffer });
 
     } catch (err) {
-      console.error("fm.js error final fallback:", err);
-      return message.reply("❌ Unexpected error while creating collage. Ami try korlam but problem holo. Please send fmdebug2 output if still failing. Credit: Helal");
+      console.log(err);
+      return message.reply("❌ Error creating collage. Credit: Helal");
     }
   }
 };
