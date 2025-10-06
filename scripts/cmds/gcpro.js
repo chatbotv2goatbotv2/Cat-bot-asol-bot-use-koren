@@ -1,58 +1,100 @@
-const groupProtect = new Map();
-
 module.exports = {
   config: {
     name: "gcpro",
-    version: "2.0",
-    author: "Helal Islam",
-    shortDescription: "Enable stylish group protection.",
-    longDescription: "Protects your group from spam, name & emoji changes with neon-style warnings.",
-    category: "group",
-    guide: "{pn}gcpro [on/off]"
+    aliases: ["groupprotect", "protect"],
+    version: "9.5",
+    author: "Helal Islam 💫",
+    shortDescription: "Activate stylish group protection",
+    longDescription:
+      "Activates advanced group security: prevents name/theme change, spam messages, and protects admin settings with neon-styled alerts.",
+    category: "system",
+    guide: {
+      en: "{pn} on/off"
+    }
   },
 
-  onStart: async function ({ message, args, event }) {
+  onStart: async function ({ message, event, args, api, threadsData }) {
     const threadID = event.threadID;
-    if (!args[0]) return message.reply("⚙️ Use: .gcpro [on/off]");
+    const threadInfo = await api.getThreadInfo(threadID);
+
+    // Protection toggle
+    if (!args[0]) {
+      return message.reply("⚙️ Usage: .gcpro on / .gcpro off");
+    }
 
     if (args[0].toLowerCase() === "on") {
-      groupProtect.set(threadID, { spam: {} });
-      return message.reply("🛡️✨ 𝗚𝗿𝗼𝘂𝗽 𝗣𝗿𝗼𝘁𝗲𝗰𝘁𝗶𝗼𝗻 𝗠𝗼𝗱𝗲 𝗔𝗰𝘁𝗶𝘃𝗮𝘁𝗲𝗱 ✨🛡️");
+      global.gcProtection = global.gcProtection || {};
+      global.gcProtection[threadID] = {
+        name: threadInfo.threadName,
+        protection: true,
+        spamCount: {}
+      };
+
+      return message.reply(
+        "🌌 **DIGITAL GC PROTECTION ACTIVATED!**\n" +
+        "🔒 Group is now under security mode.\n" +
+        "👑 Only Admins & Bot Admin can change settings."
+      );
     }
 
     if (args[0].toLowerCase() === "off") {
-      groupProtect.delete(threadID);
-      return message.reply("🔓 Group Protection Disabled ❌");
+      if (global.gcProtection?.[threadID]) delete global.gcProtection[threadID];
+      return message.reply("🔓 GC Protection Disabled Successfully!");
     }
   },
 
   onEvent: async function ({ event, api }) {
-    const { threadID, author, type } = event;
+    const threadID = event.threadID;
+    const data = global.gcProtection?.[threadID];
+    if (!data?.protection) return;
 
-    if (!groupProtect.has(threadID)) return;
-    const data = groupProtect.get(threadID);
+    try {
+      const info = await api.getThreadInfo(threadID);
 
-    // 🏷️ Prevent group name change
-    if (event.logMessageType === "log:thread-name") {
-      api.sendMessage("🚫❌ Group name change is not allowed under 🛡️ Protection Mode!", threadID);
-      api.changeThreadTitle("🌌 𝗣𝗿𝗼𝘁𝗲𝗰𝘁𝗲𝗱 𝗚𝗿𝗼𝘂𝗽 🌌", threadID);
-    }
-
-    // 💠 Prevent emoji/reaction change
-    if (event.logMessageType === "log:thread-icon") {
-      api.sendMessage("💢 Reaction or emoji change is 🔒 locked by protection!", threadID);
-    }
-
-    // 🚨 Anti-spam system
-    if (type === "message") {
-      const now = Date.now();
-      if (!data.spam[author]) data.spam[author] = [];
-      data.spam[author].push(now);
-      data.spam[author] = data.spam[author].filter(t => now - t < 8000);
-
-      if (data.spam[author].length > 5) {
-        api.sendMessage("⚠️ [𝗪𝗔𝗥𝗡𝗜𝗡𝗚] Stop spamming or you’ll be muted! 🚫", threadID);
+      // 🔥 1️⃣ Name Protection
+      if (info.threadName !== data.name) {
+        await api.setTitle(data.name, threadID);
+        return api.sendMessage(
+          "⚠️ Group name change detected!\n" +
+          "🔁 Name restored by 🌌 *Digital AI System* 🔮",
+          threadID
+        );
       }
+
+      // 🔥 2️⃣ Spam Protection
+      if (event.type === "message" && event.senderID) {
+        const sender = event.senderID;
+        data.spamCount[sender] = (data.spamCount[sender] || 0) + 1;
+
+        if (data.spamCount[sender] > 5) {
+          data.spamCount[sender] = 0;
+          return api.sendMessage(
+            "⚡ *SPAM DETECTED!* ⚡\n" +
+            "User warned 🚫\n" +
+            "🌈 Keep the chat clean!",
+            threadID
+          );
+        }
+
+        setTimeout(() => {
+          if (data.spamCount[sender]) data.spamCount[sender]--;
+        }, 8000);
+      }
+
+      // 🔥 3️⃣ Quick Reaction & Emoji Change Protection
+      if (event.logMessageType === "log:thread-icon" || event.logMessageType === "log:thread-emoji") {
+        await api.changeThreadEmoji("💫", threadID);
+        return api.sendMessage("🚫 Emoji change blocked!", threadID);
+      }
+
+      // 🔥 4️⃣ Theme Change Block
+      if (event.logMessageType === "log:thread-color") {
+        await api.changeThreadColor("#000000", threadID);
+        return api.sendMessage("🛡️ Theme modification not allowed!", threadID);
+      }
+
+    } catch (err) {
+      console.error("GC Protection Error:", err);
     }
   }
 };
