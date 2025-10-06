@@ -14,7 +14,7 @@ module.exports = {
     const { threadID, senderID } = event;
     const threadInfo = await api.getThreadInfo(threadID);
     const adminIDs = threadInfo.adminIDs.map(ad => ad.id);
-    const botAdmins = ["100093476000000"]; // Add your bot admin IDs here
+    const botAdmins = ["61580156099497"]; // Add your bot admin IDs here
 
     // Check admin permission
     if (!adminIDs.includes(senderID) && !botAdmins.includes(senderID)) {
