@@ -1,74 +1,77 @@
 const fs = require("fs");
 const path = require("path");
-const roleFile = path.join(__dirname, "botData", "roles.json");
 
-if (!fs.existsSync(path.dirname(roleFile))) fs.mkdirSync(path.dirname(roleFile), { recursive: true });
-if (!fs.existsSync(roleFile)) fs.writeFileSync(roleFile, "{}");
+const dataPath = path.join(__dirname, "roles_data.json");
 
 module.exports = {
   config: {
-    name: "setrole",
-    aliases: ["role"],
-    version: "2.0",
+    name: "role",
+    version: "5.0",
     author: "Helal Islam",
-    shortDescription: "Set or view custom group roles",
-    longDescription: "Set custom text for roles like Admin, Mod, Top etc. Works even after restart.",
-    category: "system",
+    role: 0,
+    category: "utility",
+    shortDescription: "Create, view and delete roles",
+    longDescription: "Manage custom text roles that can be viewed later",
     guide: {
-      en: "{pn} setrole <role> <text>\n{pn} role <role>\n{pn} role delete <role>"
+      en: `
+🌈 Role System Commands 🌈
+--------------------------------
+.setrole <role> <text>  → Set a role
+.role <role>            → Show that role
+.role list              → Show all roles
+.role delete <role>     → Delete a role`
     }
   },
 
-  onStart: async function ({ message, args, event, threadsData, role }) {
-    const isGroupAdmin = role === 1 || role === 2;
-    if (!isGroupAdmin) return message.reply("🚫 | Only Group Admin or Bot Admin can use this command.");
+  onStart: async function ({ message, args, event }) {
+    // Make sure file exists
+    if (!fs.existsSync(dataPath)) fs.writeFileSync(dataPath, JSON.stringify({}, null, 2));
+    const data = JSON.parse(fs.readFileSync(dataPath));
 
-    const data = JSON.parse(fs.readFileSync(roleFile, "utf8"));
     const threadID = event.threadID;
     if (!data[threadID]) data[threadID] = {};
 
-    const action = args[0]?.toLowerCase();
-    const roleName = args[1]?.toLowerCase();
-    const roleText = args.slice(2).join(" ");
+    if (args.length === 0)
+      return message.reply(
+        "⚙️ | Use:\n.setrole <role> <text>\n.role <role>\n.role list\n.role delete <role>"
+      );
 
-    // --- Set Role ---
-    if (action === "setrole" || action === "set") {
-      if (!roleName || !roleText) return message.reply("⚠️ | Usage: .setrole <role> <text>");
-      data[threadID][roleName] = roleText;
-      fs.writeFileSync(roleFile, JSON.stringify(data, null, 2));
-      return message.reply(`✅ | Role '${roleName}' has been set to:\n✨ ${roleText}`);
+    const sub = args[0].toLowerCase();
+
+    // ---------- Delete ----------
+    if (sub === "delete") {
+      const roleName = args[1]?.toLowerCase();
+      if (!roleName) return message.reply("⚠️ | Please specify which role to delete!");
+      if (!data[threadID][roleName]) return message.reply("❌ | That role doesn’t exist!");
+      delete data[threadID][roleName];
+      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+      return message.reply(`🗑️ | Role '${roleName}' deleted successfully!`);
     }
 
-    // --- View Role ---
-    if (action === "role" && roleName) {
-      if (data[threadID][roleName]) {
-        return message.reply(`💫 | Role '${roleName}':\n${data[threadID][roleName]}`);
-      } else {
-        return message.reply(`⚠️ | This role is not set yet!`);
-      }
-    }
-
-    // --- Delete Role ---
-    if (action === "role" && args[1] === "delete") {
-      const delName = args[2]?.toLowerCase();
-      if (!delName) return message.reply("⚠️ | Usage: .role delete <role>");
-      if (!data[threadID][delName]) return message.reply(`❌ | That role doesn't exist!`);
-      delete data[threadID][delName];
-      fs.writeFileSync(roleFile, JSON.stringify(data, null, 2));
-      return message.reply(`🗑️ | Role '${delName}' has been deleted successfully!`);
-    }
-
-    // --- Show All Roles ---
-    if (!action) {
-      const roles = Object.keys(data[threadID]);
-      if (roles.length === 0) return message.reply("⚠️ | No roles set yet!");
-      let msg = "🌈 𝗦𝗘𝗧 𝗥𝗢𝗟𝗘𝗦 🌈\n\n";
-      for (const [role, text] of Object.entries(data[threadID])) {
-        msg += `⚡ ${role}: ${text}\n`;
-      }
+    // ---------- List ----------
+    if (sub === "list") {
+      const roles = data[threadID];
+      if (Object.keys(roles).length === 0)
+        return message.reply("📂 | No roles set for this group!");
+      let msg = "🌈 𝗥𝗢𝗟𝗘 𝗟𝗜𝗦𝗧 🌈\n";
+      for (const [k, v] of Object.entries(roles))
+        msg += `✨ ${k.toUpperCase()} ➜ ${v}\n`;
       return message.reply(msg);
     }
 
-    return message.reply("⚙️ | Use:\n.setrole <role> <text>\n.role <role>\n.role delete <role>");
+    // ---------- Show role ----------
+    if (!args[1]) {
+      const roleName = sub;
+      const role = data[threadID][roleName];
+      if (!role) return message.reply("⚠️ | This role is not set yet!");
+      return message.reply(`💫 | ${roleName.toUpperCase()} ➜ ${role}`);
+    }
+
+    // ---------- Set role ----------
+    const roleName = sub;
+    const roleText = args.slice(1).join(" ");
+    data[threadID][roleName] = roleText;
+    fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+    return message.reply(`✅ | Role '${roleName}' has been set to:\n✨ ${roleText}`);
   }
 };
