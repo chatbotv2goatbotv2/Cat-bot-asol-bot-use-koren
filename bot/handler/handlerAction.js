@@ -46,8 +46,8 @@ module.exports = (api, threadModel, userModel, dashBoardModel, globalModel, user
 				
 				const isAdmin = global.GoatBot.config.adminBot.includes(event.userID);
 
-               // 👎 = শুধু অ্যাডমিন পারবে
-                if (event.reaction == "🦵") {
+               // 🚫 = শুধু অ্যাডমিন পারবে
+                if (event.reaction == "🚫") {
 	               if (isAdmin) {
 	            	   api.removeUserFromGroup(event.senderID, event.threadID, (err) => {
 		              	   if (err) return console.log(err);
@@ -55,8 +55,8 @@ module.exports = (api, threadModel, userModel, dashBoardModel, globalModel, user
 	                }
                 }
 
-              // 🙂 🤬 😡 এই ৩টা রিঅ্যাকশন দিলেই unsend হবে
-                if (event.reaction == "🙂" || event.reaction == "😡" || event.reaction == "🤬") {
+              // 😾 🤬 😡 এই ৩টা রিঅ্যাকশন দিলেই unsend হবে
+                if (event.reaction == "😾" || event.reaction == "😡" || event.reaction == "🤬") {
 	                 message.unsend(event.messageID);
                 }              	               			    				  
 				break;
