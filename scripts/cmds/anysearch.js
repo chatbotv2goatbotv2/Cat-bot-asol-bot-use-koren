@@ -3,48 +3,50 @@ const axios = require("axios");
 module.exports = {
   config: {
     name: "anysearch",
-    aliases: ["ytsearch", "yts"],
-    version: "4.0",
+    version: "5.0",
     author: "Helal Islam",
-    shortDescription: "Search and play YouTube videos.",
-    longDescription: "Search any video on YouTube and play the one you select by replying with the number.",
+    countDown: 5,
+    role: 0,
     category: "media",
-    guide: "{pn} <video name>",
+    shortDescription: "Search and select YouTube video",
+    longDescription: "Search any YouTube video, view top 5 results, and reply with number to get the video link.",
+    guide: {
+      en: "{pn} <video name>"
+    }
   },
 
   onStart: async function ({ message, args, event }) {
     const query = args.join(" ");
-    if (!query) return message.reply("🔍 | Please enter something to search on YouTube.");
-
-    message.reply(`⏳ | Searching for **${query}** ...`);
+    if (!query) return message.reply("🔍 | Please type something to search!");
 
     try {
+      message.reply(`⏳ | Searching for **${query}** on YouTube...`);
+
       const res = await axios.get(
-        `https://yt-api-delta.vercel.app/api/search?query=${encodeURIComponent(query)}`
+        `https://ytsearch.youtubemusicdownloader.repl.co/search?query=${encodeURIComponent(query)}`
       );
-      const results = res.data.results?.slice(0, 5);
+      const results = res.data.videos?.slice(0, 5);
 
       if (!results || results.length === 0)
-        return message.reply("❌ | No results found, try another keyword!");
+        return message.reply("❌ | No results found! Try another keyword.");
 
-      let text = `🌌 𝗬𝗼𝘂𝗧𝘂𝗯𝗲 𝗦𝗲𝗮𝗿𝗰𝗵 𝗥𝗲𝘀𝘂𝗹𝘁𝘀 🌌\n🔎 Keyword: ${query}\n\n`;
+      let msg = `🌐 𝗬𝗼𝘂𝗧𝘂𝗯𝗲 𝗦𝗲𝗮𝗿𝗰𝗵 𝗥𝗲𝘀𝘂𝗹𝘁𝘀 🌐\n🔎 Keyword: ${query}\n\n`;
       for (let i = 0; i < results.length; i++) {
         const v = results[i];
-        text += `${i + 1}. 🎬 ${v.title}\n📺 ${v.channel}\n🕒 ${v.duration}\n\n`;
+        msg += `${i + 1}. 🎬 ${v.title}\n📺 ${v.channel}\n🕒 ${v.duration}\n\n`;
       }
-      text += `Reply with the video number (1-${results.length}) to get that video 🎧`;
+      msg += `⚙️ Reply with a number (1–${results.length}) to get the video link 🎧`;
 
-      message.reply(text, (err, info) => {
+      message.reply(msg, (err, info) => {
         global.GoatBot.onReply.set(info.messageID, {
           commandName: this.config.name,
           author: event.senderID,
-          messageID: info.messageID,
-          results,
+          results
         });
       });
     } catch (e) {
-      console.log(e);
-      message.reply("⚠️ | Error fetching YouTube results.");
+      console.error(e);
+      message.reply("⚠️ | YouTube search failed! Please try again later.");
     }
   },
 
@@ -53,11 +55,11 @@ module.exports = {
     const choice = parseInt(event.body.trim());
 
     if (isNaN(choice) || choice < 1 || choice > Reply.results.length)
-      return message.reply("❌ | Invalid number. Choose from 1–5.");
+      return message.reply("❌ | Invalid choice! Please choose a valid number.");
 
     const video = Reply.results[choice - 1];
-    message.reply({
-      body: `🎬 ${video.title}\n📺 ${video.channel}\n🔗 ${video.url}`,
+    return message.reply({
+      body: `🎬 ${video.title}\n📺 ${video.channel}\n🔗 ${video.url}`
     });
-  },
+  }
 };
