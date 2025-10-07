@@ -1,75 +1,81 @@
+const fs = require("fs");
+const path = require("path");
+
 module.exports = {
   config: {
     name: "help",
-    aliases: ["menu", "commands", "cmd"],
-    version: "7.3",
-    author: "Helal Islam",
-    shortDescription: "Show all commands in clean, vodro/fancy style.",
-    longDescription: "Displays all commands category-wise with neat alignment and stylish look.",
+    aliases: ["h"],
+    version: "2.0",
+    cooldown: 3,
+    description: "Show all available commands or command usage details",
     category: "system",
-    guide: "{pn} [command]"
   },
 
-  onStart: async function ({ message, prefix }) {
+  onStart: async function ({ api, event, args, commandName, prefix }) {
     try {
-      const allCommands = global.GoatBot.commands;
-      const categories = {};
+      const cmdsDir = path.join(__dirname, ".."); 
+      const categories = fs.readdirSync(cmdsDir);
+      let allCommands = [];
 
-      // Clean category names
-      const cleanCategory = (text) => text ? text.toUpperCase() : "OTHERS";
-
-      // Categorize commands
-      for (const [name, cmd] of allCommands) {
-        if (!cmd?.config || cmd.config.name === "help") continue;
-        const cat = cleanCategory(cmd.config.category);
-        if (!categories[cat]) categories[cat] = [];
-        categories[cat].push(cmd.config.name);
-      }
-
-      // Category emojis
-      const emojiMap = {
-        "AI-IMAGE": "🎨",
-        FUN: "🎮",
-        SYSTEM: "⚙️",
-        OTHERS: "📁"
-      };
-
-      // Build menu message
-      let menuMsg = "🌌 𝗗𝗜𝗚𝗜𝗧𝗔𝗟 𝗔𝗜 𝗠𝗘𝗡𝗨 🌌\n━━━━━━━━━━━━━━━━\n";
-
-      const sortedCats = Object.keys(categories).sort();
-      for (const cat of sortedCats) {
-        if (!categories[cat] || categories[cat].length === 0) continue;
-        const icon = emojiMap[cat] || "✨";
-        const cmds = categories[cat].sort();
-
-        menuMsg += `╭─${icon}『 ${cat} 』\n`;
-        for (let i = 0; i < cmds.length; i += 2) {
-          const cmd1 = cmds[i];
-          const cmd2 = cmds[i + 1];
-          if (cmd2) {
-            menuMsg += `│ ⚡ ${cmd1}  \n | ⚡ ${cmd2}\n`;
-          } else {
-            menuMsg += `│ ⚡ ${cmd1}\n`;
+      // Load all commands
+      for (const category of categories) {
+        const catPath = path.join(cmdsDir, category);
+        if (fs.statSync(catPath).isDirectory()) {
+          const files = fs.readdirSync(catPath).filter(f => f.endsWith(".js"));
+          for (const file of files) {
+            const cmd = require(path.join(catPath, file));
+            if (cmd.config) {
+              allCommands.push({
+                name: cmd.config.name,
+                desc: cmd.config.description || "No description",
+                cat: cmd.config.category || category,
+                usage: cmd.config.usage || "No usage info",
+                role: cmd.config.role || "Everyone"
+              });
+            }
           }
         }
-        menuMsg += `╰─────────\n`;
       }
 
-      const totalCommands = allCommands.size - 1;
+      // If no argument -> show all command names
+      if (!args[0]) {
+        let msg = "✨ 𝗕𝗢𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗟𝗜𝗦𝗧 ✨\n\n";
+        const grouped = {};
 
-      menuMsg +=
-        `━━━━━━━━━━━━━━━━\n` +
-        `👑 Developed by: Helal Islam\n` +
-        `🚀 Powered by: Digital AI System\n` +
-        `Prefix: ${prefix} | Version: 7.3\n` +
-        `━━━━━━━━━━━━━━━━`;
+        // Group by category
+        for (const cmd of allCommands) {
+          if (!grouped[cmd.cat]) grouped[cmd.cat] = [];
+          grouped[cmd.cat].push(cmd.name);
+        }
 
-      return message.reply(menuMsg);
+        for (const cat in grouped) {
+          msg += `💠 ${cat.toUpperCase()}\n› ${grouped[cat].join(", ")}\n\n`;
+        }
+
+        msg += `💡 Type: ${prefix}help <command>\nTo see details of any command.`;
+        return api.sendMessage(msg, event.threadID, event.messageID);
+      }
+
+      // If argument -> show specific command info
+      const name = args[0].toLowerCase();
+      const cmd = allCommands.find(c => c.name.toLowerCase() === name);
+      if (!cmd)
+        return api.sendMessage(`❌ | Command "${name}" not found!`, event.threadID, event.messageID);
+
+      const styledMsg = `
+╭───💫 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗜𝗡𝗙𝗢 💫
+│ 🧩 Name: ${cmd.name}
+│ 💬 Description: ${cmd.desc}
+│ ⚙️ Category: ${cmd.cat}
+│ 📘 Usage: ${prefix}${cmd.name} ${cmd.usage}
+│ 👑 Role: ${cmd.role}
+│ 🔢 Version: ${cmd.version || "1.0"}
+╰─────────────────────────✦`;
+
+      api.sendMessage(styledMsg, event.threadID, event.messageID);
 
     } catch (err) {
-      console.error(err);
-      return message.reply("❌ Error loading Digital AI Menu!");
+      api.sendMessage(`❌ | Error in help command!\n${err.message}`, event.threadID, event.messageID);
     }
-  }
+  },
 };
