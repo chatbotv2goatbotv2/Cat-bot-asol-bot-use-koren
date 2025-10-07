@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 // config 
-const apiKey = "";
+const apiKey = "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";
 const maxTokens = 500;
 const numberGenerateImage = 4;
 const maxStorageMessage = 4;
@@ -17,7 +17,7 @@ module.exports = {
 	config: {
 		name: "gpt",
 		version: "1.4",
-		author: "NTKhang",
+		author: "Helal_Islam",
 		countDown: 5,
 		role: 0,
 		description: {
