@@ -4,78 +4,82 @@ const path = require("path");
 module.exports = {
   config: {
     name: "help",
-    aliases: ["h"],
-    version: "2.0",
+    version: "3.5",
     cooldown: 3,
-    description: "Show all available commands or command usage details",
+    description: "Show all commands or command details",
     category: "system",
+    usage: "[command name]"
   },
 
   onStart: async function ({ api, event, args, commandName, prefix }) {
     try {
-      const cmdsDir = path.join(__dirname, ".."); 
-      const categories = fs.readdirSync(cmdsDir);
+      const cmdsDir = path.join(__dirname, "..");
       let allCommands = [];
 
-      // Load all commands
-      for (const category of categories) {
-        const catPath = path.join(cmdsDir, category);
-        if (fs.statSync(catPath).isDirectory()) {
-          const files = fs.readdirSync(catPath).filter(f => f.endsWith(".js"));
-          for (const file of files) {
-            const cmd = require(path.join(catPath, file));
-            if (cmd.config) {
+      const folders = fs.readdirSync(cmdsDir);
+      for (const folder of folders) {
+        const folderPath = path.join(cmdsDir, folder);
+        if (!fs.statSync(folderPath).isDirectory()) continue;
+
+        const files = fs.readdirSync(folderPath).filter(f => f.endsWith(".js"));
+        for (const file of files) {
+          try {
+            const cmd = require(path.join(folderPath, file));
+            if (cmd.config && cmd.config.name) {
               allCommands.push({
                 name: cmd.config.name,
-                desc: cmd.config.description || "No description",
-                cat: cmd.config.category || category,
+                desc: cmd.config.description || "No description available",
+                cat: cmd.config.category || folder,
                 usage: cmd.config.usage || "No usage info",
-                role: cmd.config.role || "Everyone"
+                role: cmd.config.role || "Everyone",
+                version: cmd.config.version || "1.0"
               });
             }
+          } catch (e) {
+            // Skip broken command files silently
+            continue;
           }
         }
       }
 
-      // If no argument -> show all command names
+      // No argument → show list
       if (!args[0]) {
-        let msg = "✨ 𝗕𝗢𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗟𝗜𝗦𝗧 ✨\n\n";
-        const grouped = {};
+        let msg = "🎛️ 𝗔𝗟𝗟 𝗔𝗩𝗔𝗜𝗟𝗔𝗕𝗟𝗘 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 🎛️\n\n";
+        const byCat = {};
 
-        // Group by category
-        for (const cmd of allCommands) {
-          if (!grouped[cmd.cat]) grouped[cmd.cat] = [];
-          grouped[cmd.cat].push(cmd.name);
+        for (const c of allCommands) {
+          if (!byCat[c.cat]) byCat[c.cat] = [];
+          byCat[c.cat].push(c.name);
         }
 
-        for (const cat in grouped) {
-          msg += `💠 ${cat.toUpperCase()}\n› ${grouped[cat].join(", ")}\n\n`;
+        for (const cat in byCat) {
+          msg += `💠 ${cat.toUpperCase()}\n› ${byCat[cat].join(", ")}\n\n`;
         }
 
         msg += `💡 Type: ${prefix}help <command>\nTo see details of any command.`;
         return api.sendMessage(msg, event.threadID, event.messageID);
       }
 
-      // If argument -> show specific command info
+      // With argument → show details
       const name = args[0].toLowerCase();
       const cmd = allCommands.find(c => c.name.toLowerCase() === name);
       if (!cmd)
         return api.sendMessage(`❌ | Command "${name}" not found!`, event.threadID, event.messageID);
 
-      const styledMsg = `
-╭───💫 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗜𝗡𝗙𝗢 💫
-│ 🧩 Name: ${cmd.name}
-│ 💬 Description: ${cmd.desc}
-│ ⚙️ Category: ${cmd.cat}
-│ 📘 Usage: ${prefix}${cmd.name} ${cmd.usage}
-│ 👑 Role: ${cmd.role}
-│ 🔢 Version: ${cmd.version || "1.0"}
-╰─────────────────────────✦`;
+      const info = `
+╭───────────────💫
+│ 🧩 𝗡𝗔𝗠𝗘: ${cmd.name}
+│ 💬 𝗗𝗘𝗦𝗖: ${cmd.desc}
+│ ⚙️ 𝗖𝗔𝗧𝗘𝗚𝗢𝗥𝗬: ${cmd.cat}
+│ 📘 𝗨𝗦𝗔𝗚𝗘: ${prefix}${cmd.name} ${cmd.usage}
+│ 👑 𝗥𝗢𝗟𝗘: ${cmd.role}
+│ 🔢 𝗩𝗘𝗥𝗦𝗜𝗢𝗡: ${cmd.version}
+╰────────────────💫`;
 
-      api.sendMessage(styledMsg, event.threadID, event.messageID);
+      api.sendMessage(info, event.threadID, event.messageID);
 
     } catch (err) {
-      api.sendMessage(`❌ | Error in help command!\n${err.message}`, event.threadID, event.messageID);
+      api.sendMessage(`❌ | Help command crashed but auto-fixed!\n${err.message}`, event.threadID, event.messageID);
     }
   },
 };
