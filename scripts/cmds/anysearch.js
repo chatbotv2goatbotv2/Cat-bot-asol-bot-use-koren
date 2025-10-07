@@ -6,63 +6,69 @@ module.exports = {
   config: {
     name: "anysearch",
     aliases: ["ytfind", "ytsearch"],
-    version: "2.5",
+    version: "3.5",
     author: "Helal Islam",
     category: "media",
-    shortDescription: "Search and download YouTube videos directly.",
-    longDescription:
-      "Search any YouTube video (Bangla or English) and reply with number to download directly.",
-    guide: "{pn} <search query>",
+    shortDescription: "Search & download YouTube videos.",
+    longDescription: "Search YouTube (Bangla/English) & download by reply number.",
+    guide: "{pn}anysearch <keywords>",
   },
 
-  onStart: async function ({ api, message, args, event }) {
+  onStart: async function ({ message, args, event, commandName }) {
     const query = args.join(" ");
-    if (!query) return message.reply("⚠️ | Please enter a search term.");
+    if (!query) return message.reply("⚠️ | Please provide a search query!");
 
-    const searchResults = await yts(query);
-    const videos = searchResults.videos.slice(0, 6);
-    if (!videos.length)
-      return message.reply("❌ | No results found on YouTube!");
+    try {
+      const results = await yts(query);
+      const videos = results.videos.slice(0, 5);
+      if (!videos.length) return message.reply("❌ | No results found!");
 
-    let msg = `🎬 𝗬𝗼𝘂𝗧𝘂𝗯𝗲 𝗦𝗲𝗮𝗿𝗰𝗵 𝗥𝗲𝘀𝘂𝗹𝘁𝘀\n\n`;
-    videos.forEach(
-      (v, i) =>
-        (msg += `📀 ${i + 1}. ${v.title}\n👁️ ${v.views} views\n⏱️ ${v.timestamp}\n\n`)
-    );
-    msg += `🎯 Reply with the number (1-${videos.length}) to download.`;
+      let msg = "🎬 𝗬𝗼𝘂𝗧𝘂𝗯𝗲 𝗦𝗲𝗮𝗿𝗰𝗵 𝗥𝗲𝘀𝘂𝗹𝘁𝘀\n\n";
+      videos.forEach((v, i) => {
+        msg += `📀 ${i + 1}. ${v.title}\n👁️ ${v.views} views\n⏱️ ${v.timestamp}\n\n`;
+      });
+      msg += `🎯 Reply with number (1–${videos.length}) to download 🎧`;
 
-    const sent = await message.reply(msg);
+      const sent = await message.reply(msg);
 
-    const handleReply = async (replyEvent) => {
-      if (replyEvent.senderID !== event.senderID) return;
+      global.GoatBot.onReply.set(sent.messageID, {
+        commandName,
+        author: event.senderID,
+        videos,
+      });
+    } catch (e) {
+      console.error(e);
+      return message.reply("❌ | YouTube search failed!");
+    }
+  },
 
-      const index = parseInt(replyEvent.body) - 1;
-      if (isNaN(index) || index < 0 || index >= videos.length)
-        return message.reply("⚠️ Invalid number, try again!");
+  onReply: async function ({ message, event, Reply }) {
+    if (event.senderID !== Reply.author) return;
 
-      const video = videos[index];
-      message.reply(`⬇️ Downloading "${video.title}"... Please wait.`);
+    const index = parseInt(event.body) - 1;
+    if (isNaN(index) || index < 0 || index >= Reply.videos.length)
+      return message.reply("⚠️ | Invalid number! Try again.");
 
-      try {
-        const stream = ytdl(video.url, { filter: "audioandvideo", quality: "lowest" });
-        const filePath = `./${video.videoId}.mp4`;
+    const video = Reply.videos[index];
+    const filePath = `./${video.videoId}.mp4`;
 
-        stream.pipe(fs.createWriteStream(filePath));
-        stream.on("end", () => {
-          message.reply({
-            body: `🎥 | ${video.title}\n🔗 ${video.url}`,
-            attachment: fs.createReadStream(filePath),
-          });
-          fs.unlinkSync(filePath);
+    message.reply(`⬇️ Downloading “${video.title}” ...`);
+
+    try {
+      const stream = ytdl(video.url, { filter: "audioandvideo", quality: "lowest" });
+      const writeStream = fs.createWriteStream(filePath);
+      stream.pipe(writeStream);
+
+      writeStream.on("finish", () => {
+        message.reply({
+          body: `🎥 | ${video.title}\n🔗 ${video.url}`,
+          attachment: fs.createReadStream(filePath),
         });
-      } catch (err) {
-        console.error(err);
-        message.reply("❌ | Failed to download the video!");
-      }
-
-      api.removeListener("message", handleReply);
-    };
-
-    api.on("message", handleReply);
+        fs.unlinkSync(filePath);
+      });
+    } catch (err) {
+      console.error(err);
+      message.reply("❌ | Failed to download video!");
+    }
   },
 };
