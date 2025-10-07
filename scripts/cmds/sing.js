@@ -1,95 +1,110 @@
 const axios = require("axios");
 const fs = require("fs");
-const yts = require("yt-search");
 const path = require("path");
-const cacheDir = path.join(__dirname, "/cache");
 
-if (!fs.existsSync(cacheDir)) {
-  fs.mkdirSync(cacheDir, { recursive: true });
-}
+const apiKey = "66e0cfbb-62b8-4829-90c7-c78cacc72ae2";
+let searchCache = {};
 
 module.exports = {
- config: {
-  name: "sing",
-  version: "2.0",
-  author: "Team Calyx",
-  description: { en: "Search and download audio from YouTube" },
-  category: "media",
-  guide: { en: "{pn} <search term>: search YouTube and download the song" }
- },
+  config: {
+    name: "sing",
+    version: "1.1",
+    role: 0,
+    author: "Helal_Islam",
+    category: "music",
+    shortDescription: "Search and play SoundCloud songs",
+    longDescription: "Searches for a song using SoundCloud API and lets you play any of the top 4 results",
+    guide: "{pn} <song name>"
+  },
 
- onStart: async ({ api, args, event }) => {
-  if (!args.length) {
-   return api.sendMessage("❌ Use '{prefix} sing <search term>'.", event.threadID, event.messageID);
+  onStart: async function ({ api, event, args }) {
+    const query = args.join(" ");
+    if (!query) return api.sendMessage("❌ Please enter a song title.", event.threadID, event.messageID);
+
+    const searchUrl = `https://kaiz-apis.gleeze.com/api/soundcloud-search?title=${encodeURIComponent(query)}&apikey=${apiKey}`;
+
+    try {
+      const res = await axios.get(searchUrl);
+      const results = res.data?.results;
+
+      if (!results || results.length === 0) {
+        return api.sendMessage("❌ No songs found.", event.threadID, event.messageID);
+      }
+
+      const top4 = results.slice(0, 4);
+      let msg = `🎵 Search results for: "${query}"\n\n`;
+
+      top4.forEach((song, index) => {
+        msg += `${index + 1}. ${song.title} — ${song.artist} (${song.duration})\n`;
+      });
+
+      msg += `\nReply with a number (1-4) to play the song.`;
+      searchCache[event.senderID] = top4;
+
+      return api.sendMessage(msg, event.threadID, (err, info) => {
+        global.GoatBot.onReply.set(info.messageID, {
+          commandName: "sing",
+          author: event.senderID,
+          messageID: info.messageID // store for unsend
+        });
+      });
+
+    } catch (err) {
+      console.error(err);
+      return api.sendMessage("❌ Failed to fetch songs.", event.threadID, event.messageID);
+    }
+  },
+
+  onReply: async function ({ api, event, Reply }) {
+    if (event.senderID !== Reply.author) return;
+
+    const choice = parseInt(event.body);
+    if (isNaN(choice) || choice < 1 || choice > 4) {
+      return api.sendMessage("❌ Please reply with a number between 1 and 4.", event.threadID, event.messageID);
+    }
+
+    const selected = searchCache[event.senderID][choice - 1];
+    if (!selected) return api.sendMessage("❌ Song not found in cache.", event.threadID, event.messageID);
+
+    const dlUrl = `https://kaiz-apis.gleeze.com/api/soundcloud-dl?url=${encodeURIComponent(selected.url)}&apikey=${apiKey}`;
+
+    try {
+      const dlRes = await axios.get(dlUrl);
+      const audioUrl = dlRes.data?.downloadUrl;
+      const title = dlRes.data?.title || selected.title;
+
+      if (!audioUrl) return api.sendMessage("❌ Couldn't fetch download URL.", event.threadID, event.messageID);
+
+      const filePath = path.join(__dirname, "tmp", `${Date.now()}.mp3`);
+      const writer = fs.createWriteStream(filePath);
+
+      const audioStream = await axios({
+        url: audioUrl,
+        method: "GET",
+        responseType: "stream"
+      });
+
+      audioStream.data.pipe(writer);
+
+      writer.on("finish", () => {
+        // Unsend the search message before sending the audio
+        api.unsendMessage(Reply.messageID, (err) => {
+          if (err) console.log("⚠️ Failed to unsend search message:", err);
+
+          api.sendMessage({
+            body: `🎶 Now Playing: ${title}`,
+            attachment: fs.createReadStream(filePath)
+          }, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
+        });
+      });
+
+      writer.on("error", () => {
+        return api.sendMessage("❌ Failed to download song.", event.threadID, event.messageID);
+      });
+
+    } catch (err) {
+      console.error(err);
+      return api.sendMessage("❌ Error playing the song.", event.threadID, event.messageID);
+    }
   }
-
-  try {
-   api.setMessageReaction("⏳", event.messageID, () => {}, true);
-
-   const search = await yts(args.join(" "));
-   const video = search.videos[0];
-   if (!video) {
-    api.setMessageReaction("⭕", event.messageID, () => {}, true);
-    return api.sendMessage(`⭕ No results for: ${args.join(" ")}`, event.threadID, event.messageID);
-   }
-
-   const BASE_URL = await getApiUrl();
-   if (!BASE_URL) {
-    api.setMessageReaction("❌", event.messageID, () => {}, true);
-    return api.sendMessage("❌ Could not fetch API URL.", event.threadID, event.messageID);
-   }
-
-   const response = await axios.get(`${BASE_URL}/api/ytmp3?url=${encodeURIComponent(video.url)}`);
-   const downloadUrl = response.data?.download_url;
-
-   if (!downloadUrl) {
-    api.setMessageReaction("❌", event.messageID, () => {}, true);
-    return api.sendMessage("❌ Could not get MP3 link. Try again later.", event.threadID, event.messageID);
-   }
-
-   const audioPath = path.join(cacheDir, `ytb_audio_${video.videoId}.mp3`);
-   await downloadFile(downloadUrl, audioPath);
-
-   api.setMessageReaction("✅", event.messageID, () => {}, true);
-   await api.sendMessage(
-    {
-     body: `🎵 Song Downloaded Successfully:\n• Title: ${video.title}\n• Channel: ${video.author.name}`,
-     attachment: fs.createReadStream(audioPath),
-    },
-    event.threadID,
-    () => fs.unlinkSync(audioPath),
-    event.messageID
-   );
-  } catch (e) {
-   console.error("Error in sing command:", e.message || e);
-   api.setMessageReaction("❌", event.messageID, () => {}, true);
-   api.sendMessage("❌ Error occurred while downloading. Try again later.", event.threadID, event.messageID);
-  }
- },
 };
-
-async function downloadFile(url, filePath) {
- const response = await axios({
-  url,
-  method: "GET",
-  responseType: "stream",
- });
- const writer = fs.createWriteStream(filePath);
- response.data.pipe(writer);
- return new Promise((resolve, reject) => {
-  writer.on("finish", resolve);
-  writer.on("error", reject);
- });
-}
-
-async function getApiUrl() {
- try {
-  const { data } = await axios.get(
-   "https://raw.githubusercontent.com/romeoislamrasel/romeobot/refs/heads/main/api.json"
-  );
-  return data.api;
- } catch (error) {
-  console.error("Error fetching API URL:", error);
-  return null;
- }
-}
