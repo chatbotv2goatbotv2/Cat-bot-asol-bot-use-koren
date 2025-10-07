@@ -1,65 +1,68 @@
-const axios = require("axios");
+const yts = require("yt-search");
+const ytdl = require("@distube/ytdl-core");
+const fs = require("fs");
 
 module.exports = {
   config: {
     name: "anysearch",
-    version: "5.0",
+    aliases: ["ytfind", "ytsearch"],
+    version: "2.5",
     author: "Helal Islam",
-    countDown: 5,
-    role: 0,
     category: "media",
-    shortDescription: "Search and select YouTube video",
-    longDescription: "Search any YouTube video, view top 5 results, and reply with number to get the video link.",
-    guide: {
-      en: "{pn} <video name>"
-    }
+    shortDescription: "Search and download YouTube videos directly.",
+    longDescription:
+      "Search any YouTube video (Bangla or English) and reply with number to download directly.",
+    guide: "{pn} <search query>",
   },
 
-  onStart: async function ({ message, args, event }) {
+  onStart: async function ({ api, message, args, event }) {
     const query = args.join(" ");
-    if (!query) return message.reply("🔍 | Please type something to search!");
+    if (!query) return message.reply("⚠️ | Please enter a search term.");
 
-    try {
-      message.reply(`⏳ | Searching for **${query}** on YouTube...`);
+    const searchResults = await yts(query);
+    const videos = searchResults.videos.slice(0, 6);
+    if (!videos.length)
+      return message.reply("❌ | No results found on YouTube!");
 
-      const res = await axios.get(
-        `https://ytsearch.youtubemusicdownloader.repl.co/search?query=${encodeURIComponent(query)}`
-      );
-      const results = res.data.videos?.slice(0, 5);
+    let msg = `🎬 𝗬𝗼𝘂𝗧𝘂𝗯𝗲 𝗦𝗲𝗮𝗿𝗰𝗵 𝗥𝗲𝘀𝘂𝗹𝘁𝘀\n\n`;
+    videos.forEach(
+      (v, i) =>
+        (msg += `📀 ${i + 1}. ${v.title}\n👁️ ${v.views} views\n⏱️ ${v.timestamp}\n\n`)
+    );
+    msg += `🎯 Reply with the number (1-${videos.length}) to download.`;
 
-      if (!results || results.length === 0)
-        return message.reply("❌ | No results found! Try another keyword.");
+    const sent = await message.reply(msg);
 
-      let msg = `🌐 𝗬𝗼𝘂𝗧𝘂𝗯𝗲 𝗦𝗲𝗮𝗿𝗰𝗵 𝗥𝗲𝘀𝘂𝗹𝘁𝘀 🌐\n🔎 Keyword: ${query}\n\n`;
-      for (let i = 0; i < results.length; i++) {
-        const v = results[i];
-        msg += `${i + 1}. 🎬 ${v.title}\n📺 ${v.channel}\n🕒 ${v.duration}\n\n`;
-      }
-      msg += `⚙️ Reply with a number (1–${results.length}) to get the video link 🎧`;
+    const handleReply = async (replyEvent) => {
+      if (replyEvent.senderID !== event.senderID) return;
 
-      message.reply(msg, (err, info) => {
-        global.GoatBot.onReply.set(info.messageID, {
-          commandName: this.config.name,
-          author: event.senderID,
-          results
+      const index = parseInt(replyEvent.body) - 1;
+      if (isNaN(index) || index < 0 || index >= videos.length)
+        return message.reply("⚠️ Invalid number, try again!");
+
+      const video = videos[index];
+      message.reply(`⬇️ Downloading "${video.title}"... Please wait.`);
+
+      try {
+        const stream = ytdl(video.url, { filter: "audioandvideo", quality: "lowest" });
+        const filePath = `./${video.videoId}.mp4`;
+
+        stream.pipe(fs.createWriteStream(filePath));
+        stream.on("end", () => {
+          message.reply({
+            body: `🎥 | ${video.title}\n🔗 ${video.url}`,
+            attachment: fs.createReadStream(filePath),
+          });
+          fs.unlinkSync(filePath);
         });
-      });
-    } catch (e) {
-      console.error(e);
-      message.reply("⚠️ | YouTube search failed! Please try again later.");
-    }
+      } catch (err) {
+        console.error(err);
+        message.reply("❌ | Failed to download the video!");
+      }
+
+      api.removeListener("message", handleReply);
+    };
+
+    api.on("message", handleReply);
   },
-
-  onReply: async function ({ message, Reply, event }) {
-    if (event.senderID !== Reply.author) return;
-    const choice = parseInt(event.body.trim());
-
-    if (isNaN(choice) || choice < 1 || choice > Reply.results.length)
-      return message.reply("❌ | Invalid choice! Please choose a valid number.");
-
-    const video = Reply.results[choice - 1];
-    return message.reply({
-      body: `🎬 ${video.title}\n📺 ${video.channel}\n🔗 ${video.url}`
-    });
-  }
 };
