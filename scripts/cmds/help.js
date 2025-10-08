@@ -5,81 +5,82 @@ module.exports = {
   config: {
     name: "help",
     aliases: ["menu", "commands"],
-    version: "9.0",
+    version: "10.5",
     role: 0,
-    shortDescription: "Show all available bot commands",
-    longDescription: "Display all available commands and details in a stylish format",
+    shortDescription: "Show all bot commands (auto)",
+    longDescription: "Display all commands with emoji, auto-detect system",
     category: "system",
     guide: {
-      en: "{p}help (command name)",
+      en: "{p}help [command name]",
     },
   },
 
-  onStart: async function ({ message, args, commandName }) {
+  onStart: async function ({ message, args }) {
     const cmdPath = path.join(__dirname, "../");
-    const categories = {};
+    const commandList = [];
 
-    // Auto detect all command folders
+    // auto-detect all commands
     fs.readdirSync(cmdPath).forEach(folder => {
       const folderPath = path.join(cmdPath, folder);
       if (fs.lstatSync(folderPath).isDirectory()) {
-        const files = fs.readdirSync(folderPath).filter(f => f.endsWith(".js"));
-        if (files.length > 0) categories[folder] = files.map(f => f.replace(".js", ""));
+        fs.readdirSync(folderPath)
+          .filter(f => f.endsWith(".js"))
+          .forEach(f => {
+            try {
+              const cmdFile = require(path.join(folderPath, f));
+              const name = cmdFile.config?.name || f.replace(".js", "");
+              const cat = cmdFile.config?.category?.toLowerCase() || folder.toLowerCase();
+              commandList.push({ name, category: cat });
+            } catch {}
+          });
       }
     });
 
-    // Specific command info
+    // Show single command info
     if (args[0]) {
-      const findCommand = Object.entries(categories)
-        .flatMap(([cat, cmds]) => cmds.map(c => ({ name: c, cat })))
-        .find(c => c.name.toLowerCase() === args[0].toLowerCase());
-
-      if (!findCommand) return message.reply(`❌ | Command "${args[0]}" not found!`);
-
-      const cmdFile = require(path.join(cmdPath, findCommand.cat, `${findCommand.name}.js`));
-      const info = cmdFile.config || {};
+      const cmd = commandList.find(c => c.name === args[0].toLowerCase());
+      if (!cmd) return message.reply(`❌ | Command "${args[0]}" not found!`);
+      const file = require(path.join(cmdPath, cmd.category, `${cmd.name}.js`));
+      const info = file.config || {};
       const usage = info.guide?.en || "No usage info available";
-
-      const details = `
-╭──────『 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗜𝗡𝗙𝗢 』──────╮
-│ 💫 𝗡𝗔𝗠𝗘: ${info.name || findCommand.name}
-│ 🧩 𝗖𝗔𝗧𝗘𝗚𝗢𝗥𝗬: ${info.category || findCommand.cat}
-│ 💬 𝗗𝗘𝗦𝗖: ${info.longDescription || info.shortDescription || "No description"}
-│ ⚙️ 𝗨𝗦𝗔𝗚𝗘: ${usage}
-╰────────────────────────────╯
-`;
-      return message.reply(details);
+      return message.reply(
+`╭────『 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗜𝗡𝗙𝗢 』────╮
+│ 💫 NAME: ${info.name || cmd.name}
+│ 📂 CATEGORY: ${info.category || cmd.category}
+│ 💬 DESC: ${info.longDescription || info.shortDescription || "No description"}
+│ ⚙️ USAGE: ${usage}
+╰────────────────────────────╯`
+      );
     }
 
-    // Emoji for category
+    // Emoji map by category/command
     const emojiMap = {
+      game: "🎮",
+      quiz: "❓",
+      image: "🖼️",
+      system: "⚙️",
+      utility: "📌",
+      group: "👥",
+      text: "💬",
       admin: "👑",
       ai: "🤖",
       fun: "🎭",
-      game: "🎮",
-      system: "⚙️",
-      image: "🖼️",
-      group: "👥",
-      music: "🎵",
-      media: "📺",
-      utility: "📌",
-      text: "💬",
-      custom: "✨",
       islamic: "🕌",
+      daily: "📅",
+      media: "📺",
       owner: "🧠",
-      other: "💡",
+      other: "✨",
     };
 
-    // Create menu list
-    let menu = "╭──────『 𝗕𝗢𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗠𝗘𝗡𝗨 』──────╮\n\n";
-    for (const [cat, cmds] of Object.entries(categories)) {
-      const icon = emojiMap[cat.toLowerCase()] || "📁";
-      menu += `╭──────${icon} ${cat.toUpperCase()} ──────\n`;
-      cmds.forEach(cmd => (menu += `│ 🔹 ${cmd}\n`));
-      menu += `╰─────────────────────\n\n`;
-    }
-    menu += "💡 Type: .help <command> to view details.";
+    // Build full stylish list
+    let menu = "╭────『 𝗕𝗢𝗧 𝗠𝗘𝗡𝗨 』────╮\n\n";
+    commandList.forEach(cmd => {
+      const emoji = emojiMap[cmd.category] || "🔹";
+      menu += `${emoji} ${cmd.name}\n`;
+    });
 
-    message.reply(menu);
+    menu += `\n💡 Type: .help <command>\nto see how to use it.\n╰────────────────────────────╯`;
+
+    return message.reply(menu);
   },
 };
