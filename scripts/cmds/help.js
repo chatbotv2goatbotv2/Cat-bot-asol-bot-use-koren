@@ -4,17 +4,17 @@ const path = require("path");
 module.exports = {
   config: {
     name: "help",
-    version: "3.5",
+    version: "4.0",
     cooldown: 3,
-    description: "Show all commands or command details",
+    description: "Show all bot commands or details of a command",
     category: "system",
     usage: "[command name]"
   },
 
-  onStart: async function ({ api, event, args, commandName, prefix }) {
+  onStart: async function ({ api, event, args, prefix }) {
     try {
       const cmdsDir = path.join(__dirname, "..");
-      let allCommands = [];
+      const allCommands = [];
 
       const folders = fs.readdirSync(cmdsDir);
       for (const folder of folders) {
@@ -26,25 +26,28 @@ module.exports = {
           try {
             const cmd = require(path.join(folderPath, file));
             if (cmd.config && cmd.config.name) {
+              const desc =
+                typeof cmd.config.description === "object"
+                  ? JSON.stringify(cmd.config.description)
+                  : cmd.config.description || "No description";
               allCommands.push({
                 name: cmd.config.name,
-                desc: cmd.config.description || "No description available",
+                desc,
                 cat: cmd.config.category || folder,
-                usage: cmd.config.usage || "No usage info",
+                usage: cmd.config.usage || "",
                 role: cmd.config.role || "Everyone",
-                version: cmd.config.version || "1.0"
+                version: cmd.config.version || "1.0",
               });
             }
           } catch (e) {
-            // Skip broken command files silently
             continue;
           }
         }
       }
 
-      // No argument → show list
+      // No argument → show all
       if (!args[0]) {
-        let msg = "🎛️ 𝗔𝗟𝗟 𝗔𝗩𝗔𝗜𝗟𝗔𝗕𝗟𝗘 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 🎛️\n\n";
+        let msg = "📘✨ 𝗕𝗢𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 𝗟𝗜𝗦𝗧 ✨📘\n\n";
         const byCat = {};
 
         for (const c of allCommands) {
@@ -53,14 +56,14 @@ module.exports = {
         }
 
         for (const cat in byCat) {
-          msg += `💠 ${cat.toUpperCase()}\n› ${byCat[cat].join(", ")}\n\n`;
+          msg += `💠 ${cat.toUpperCase()}\n🪄 ${byCat[cat].join(" · ")}\n\n`;
         }
 
-        msg += `💡 Type: ${prefix}help <command>\nTo see details of any command.`;
+        msg += `📖 Type: ${prefix}help <command>\nTo see command details.`;
         return api.sendMessage(msg, event.threadID, event.messageID);
       }
 
-      // With argument → show details
+      // Specific command
       const name = args[0].toLowerCase();
       const cmd = allCommands.find(c => c.name.toLowerCase() === name);
       if (!cmd)
@@ -77,9 +80,12 @@ module.exports = {
 ╰────────────────💫`;
 
       api.sendMessage(info, event.threadID, event.messageID);
-
     } catch (err) {
-      api.sendMessage(`❌ | Help command crashed but auto-fixed!\n${err.message}`, event.threadID, event.messageID);
+      api.sendMessage(
+        `❌ | Help command crashed but auto-fixed!\n🔧 ${err.message}`,
+        event.threadID,
+        event.messageID
+      );
     }
   },
 };
