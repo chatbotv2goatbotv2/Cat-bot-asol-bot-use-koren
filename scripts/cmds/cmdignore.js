@@ -1,36 +1,57 @@
 const fs = require("fs");
 const path = require("path");
-const file = path.join(__dirname, "banData.json");
+const file = path.join(__dirname, "ignoreData.json");
 
+// যদি file না থাকে, তৈরি হবে
 if (!fs.existsSync(file)) fs.writeFileSync(file, "{}");
 
 module.exports = {
   config: {
-    name: "cmdignore", // command name changed
+    name: "ignorecmd", // main command file name
     version: "1.0",
     author: "Helal Islam",
     role: 1, // admin only
-    shortDescription: "Ignore a user from using bot commands",
-    longDescription: "Add user to ignore list so they can’t use bot commands 🚫",
+    shortDescription: "Ignore or unignore users from bot commands",
+    longDescription: "Manage ignore list for users 🚫",
     category: "moderation",
-    guide: { en: "{p}cmdignore @user" }
+    guide: { en: "{p}cmdignore @user | {p}unignore @user" }
   },
 
-  onStart: async function ({ event, message, usersData }) {
-    const mentions = Object.keys(event.mentions);
-    if (mentions.length === 0)
-      return message.reply("⚠️ | Mention a user to ignore!");
+  onStart: async function ({ event, message, args }) {
+    try {
+      const mentions = event.mentions || {};
+      const mentionIDs = Object.keys(mentions);
 
-    const data = JSON.parse(fs.readFileSync(file));
-    const target = mentions[0];
-    const name = event.mentions[target];
+      if (mentionIDs.length === 0)
+        return message.reply("⚠️ | Mention a user!");
 
-    if (data[target])
-      return message.reply(`❌ | ${name} is already ignored!`);
+      const data = JSON.parse(fs.readFileSync(file));
+      const targetID = mentionIDs[0];
+      const targetName = mentions[targetID] || "Unknown";
 
-    data[target] = { name, time: Date.now() };
-    fs.writeFileSync(file, JSON.stringify(data, null, 2));
+      // command type check
+      const cmd = args[0]?.toLowerCase() || ""; // first argument after prefix
 
-    message.reply(`🚫 | ${name} has been ignored successfully!`);
+      if (cmd === "unignore") {
+        if (!data[targetID])
+          return message.reply(`❌ | ${targetName} is not in ignore list!`);
+
+        delete data[targetID];
+        fs.writeFileSync(file, JSON.stringify(data, null, 2));
+        return message.reply(`✅ | ${targetName} has been unignored successfully!`);
+      }
+
+      // default: ignore
+      if (data[targetID])
+        return message.reply(`❌ | ${targetName} is already ignored!`);
+
+      data[targetID] = { name: targetName, time: Date.now() };
+      fs.writeFileSync(file, JSON.stringify(data, null, 2));
+
+      return message.reply(`🚫 | ${targetName} has been ignored successfully!`);
+    } catch (err) {
+      console.error(err);
+      return message.reply("❌ | Something went wrong!");
+    }
   }
 };
