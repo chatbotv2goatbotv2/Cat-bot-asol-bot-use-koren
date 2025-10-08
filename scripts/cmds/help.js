@@ -4,88 +4,112 @@ const path = require("path");
 module.exports = {
   config: {
     name: "help",
-    version: "4.0",
-    cooldown: 3,
-    description: "Show all bot commands or details of a command",
+    version: "7.0",
+    description: "Show all commands by category in stylish emoji format",
     category: "system",
-    usage: "[command name]"
+    usage: "[command name]",
   },
 
   onStart: async function ({ api, event, args, prefix }) {
     try {
-      const cmdsDir = path.join(__dirname, "..");
+      const baseDir = path.join(__dirname, "..");
       const allCommands = [];
 
-      const folders = fs.readdirSync(cmdsDir);
+      // Load all commands
+      const folders = fs.readdirSync(baseDir);
       for (const folder of folders) {
-        const folderPath = path.join(cmdsDir, folder);
+        const folderPath = path.join(baseDir, folder);
         if (!fs.statSync(folderPath).isDirectory()) continue;
-
         const files = fs.readdirSync(folderPath).filter(f => f.endsWith(".js"));
         for (const file of files) {
           try {
             const cmd = require(path.join(folderPath, file));
             if (cmd.config && cmd.config.name) {
-              const desc =
-                typeof cmd.config.description === "object"
-                  ? JSON.stringify(cmd.config.description)
-                  : cmd.config.description || "No description";
               allCommands.push({
                 name: cmd.config.name,
-                desc,
-                cat: cmd.config.category || folder,
-                usage: cmd.config.usage || "",
-                role: cmd.config.role || "Everyone",
-                version: cmd.config.version || "1.0",
+                cat: cmd.config.category?.toLowerCase() || "others",
+                desc: cmd.config.description || "No description"
               });
             }
-          } catch (e) {
-            continue;
-          }
+          } catch (e) { }
         }
       }
 
-      // No argument → show all
-      if (!args[0]) {
-        let msg = "📘✨ 𝗕𝗢𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 𝗟𝗜𝗦𝗧 ✨📘\n\n";
-        const byCat = {};
+      // emoji for each category
+      const catEmoji = {
+        game: "🎮",
+        quiz: "❓",
+        fun: "🎭",
+        utility: "📌",
+        system: "⚙️",
+        admin: "👑",
+        image: "🖼️",
+        info: "ℹ️",
+        music: "🎵",
+        ai: "🤖",
+        group: "👥",
+        moderation: "🚫",
+        others: "✨"
+      };
 
-        for (const c of allCommands) {
-          if (!byCat[c.cat]) byCat[c.cat] = [];
-          byCat[c.cat].push(c.name);
-        }
+      // emoji for individual command names (example)
+      const cmdEmoji = {
+        mc: "🎮",
+        ttt: "🎰",
+        ping: "📡",
+        uptime: "⏱️",
+        guess: "🎯",
+        quiz: "❓",
+        flux: "🖼️",
+        system: "🧰",
+        accept: "✅",
+        help: "📖",
+        riddle: "🧠"
+      };
 
-        for (const cat in byCat) {
-          msg += `💠 ${cat.toUpperCase()}\n🪄 ${byCat[cat].join(" · ")}\n\n`;
-        }
-
-        msg += `📖 Type: ${prefix}help <command>\nTo see command details.`;
-        return api.sendMessage(msg, event.threadID, event.messageID);
+      const byCat = {};
+      for (const cmd of allCommands) {
+        const cat = cmd.cat;
+        if (!byCat[cat]) byCat[cat] = [];
+        byCat[cat].push(cmd.name);
       }
 
-      // Specific command
-      const name = args[0].toLowerCase();
-      const cmd = allCommands.find(c => c.name.toLowerCase() === name);
-      if (!cmd)
-        return api.sendMessage(`❌ | Command "${name}" not found!`, event.threadID, event.messageID);
+      // specific command info
+      if (args[0]) {
+        const name = args[0].toLowerCase();
+        const cmd = allCommands.find(c => c.name.toLowerCase() === name);
+        if (!cmd) return api.sendMessage(`❌ | Command "${name}" not found!`, event.threadID);
 
-      const info = `
-╭───────────────💫
-│ 🧩 𝗡𝗔𝗠𝗘: ${cmd.name}
-│ 💬 𝗗𝗘𝗦𝗖: ${cmd.desc}
-│ ⚙️ 𝗖𝗔𝗧𝗘𝗚𝗢𝗥𝗬: ${cmd.cat}
-│ 📘 𝗨𝗦𝗔𝗚𝗘: ${prefix}${cmd.name} ${cmd.usage}
-│ 👑 𝗥𝗢𝗟𝗘: ${cmd.role}
-│ 🔢 𝗩𝗘𝗥𝗦𝗜𝗢𝗡: ${cmd.version}
-╰────────────────💫`;
+        return api.sendMessage(
+          `╭──────────────💫
+│ 🧩 Name: ${cmd.name}
+│ 💬 Description: ${cmd.desc}
+│ ⚙️ Category: ${cmd.cat}
+│ 📘 Usage: ${prefix}${cmd.name}
+╰────────────────💫`,
+          event.threadID
+        );
+      }
 
-      api.sendMessage(info, event.threadID, event.messageID);
+      // build message
+      let msg = `╭──────『 𝗕𝗢𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗠𝗘𝗡𝗨 』──────╮\n`;
+
+      const cats = Object.keys(byCat).sort();
+      for (const cat of cats) {
+        const emoji = catEmoji[cat] || "✨";
+        msg += `\n╭──────${emoji} ${cat.toUpperCase()} ──────\n`;
+        for (const cmd of byCat[cat]) {
+          const e = cmdEmoji[cmd] || "🔹";
+          msg += `│ ${e} ${cmd}\n`;
+        }
+        msg += `╰─────────────────────\n`;
+      }
+
+      msg += `\n💡 Type: ${prefix}help <command>\nTo view command details.`;
+
+      return api.sendMessage(msg, event.threadID);
     } catch (err) {
-      api.sendMessage(
-        `❌ | Help command crashed but auto-fixed!\n🔧 ${err.message}`,
-        event.threadID,
-        event.messageID
-      );
+      return api.sendMessage(`❌ | Error: ${err.message}`, event.threadID);
     }
   },
 };
