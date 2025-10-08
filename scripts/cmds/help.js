@@ -4,112 +4,82 @@ const path = require("path");
 module.exports = {
   config: {
     name: "help",
-    version: "7.0",
-    description: "Show all commands by category in stylish emoji format",
+    aliases: ["menu", "commands"],
+    version: "9.0",
+    role: 0,
+    shortDescription: "Show all available bot commands",
+    longDescription: "Display all available commands and details in a stylish format",
     category: "system",
-    usage: "[command name]",
+    guide: {
+      en: "{p}help (command name)",
+    },
   },
 
-  onStart: async function ({ api, event, args, prefix }) {
-    try {
-      const baseDir = path.join(__dirname, "..");
-      const allCommands = [];
+  onStart: async function ({ message, args, commandName }) {
+    const cmdPath = path.join(__dirname, "../");
+    const categories = {};
 
-      // Load all commands
-      const folders = fs.readdirSync(baseDir);
-      for (const folder of folders) {
-        const folderPath = path.join(baseDir, folder);
-        if (!fs.statSync(folderPath).isDirectory()) continue;
+    // Auto detect all command folders
+    fs.readdirSync(cmdPath).forEach(folder => {
+      const folderPath = path.join(cmdPath, folder);
+      if (fs.lstatSync(folderPath).isDirectory()) {
         const files = fs.readdirSync(folderPath).filter(f => f.endsWith(".js"));
-        for (const file of files) {
-          try {
-            const cmd = require(path.join(folderPath, file));
-            if (cmd.config && cmd.config.name) {
-              allCommands.push({
-                name: cmd.config.name,
-                cat: cmd.config.category?.toLowerCase() || "others",
-                desc: cmd.config.description || "No description"
-              });
-            }
-          } catch (e) { }
-        }
+        if (files.length > 0) categories[folder] = files.map(f => f.replace(".js", ""));
       }
+    });
 
-      // emoji for each category
-      const catEmoji = {
-        game: "🎮",
-        quiz: "❓",
-        fun: "🎭",
-        utility: "📌",
-        system: "⚙️",
-        admin: "👑",
-        image: "🖼️",
-        info: "ℹ️",
-        music: "🎵",
-        ai: "🤖",
-        group: "👥",
-        moderation: "🚫",
-        others: "✨"
-      };
+    // Specific command info
+    if (args[0]) {
+      const findCommand = Object.entries(categories)
+        .flatMap(([cat, cmds]) => cmds.map(c => ({ name: c, cat })))
+        .find(c => c.name.toLowerCase() === args[0].toLowerCase());
 
-      // emoji for individual command names (example)
-      const cmdEmoji = {
-        mc: "🎮",
-        ttt: "🎰",
-        ping: "📡",
-        uptime: "⏱️",
-        guess: "🎯",
-        quiz: "❓",
-        flux: "🖼️",
-        system: "🧰",
-        accept: "✅",
-        help: "📖",
-        riddle: "🧠"
-      };
+      if (!findCommand) return message.reply(`❌ | Command "${args[0]}" not found!`);
 
-      const byCat = {};
-      for (const cmd of allCommands) {
-        const cat = cmd.cat;
-        if (!byCat[cat]) byCat[cat] = [];
-        byCat[cat].push(cmd.name);
-      }
+      const cmdFile = require(path.join(cmdPath, findCommand.cat, `${findCommand.name}.js`));
+      const info = cmdFile.config || {};
+      const usage = info.guide?.en || "No usage info available";
 
-      // specific command info
-      if (args[0]) {
-        const name = args[0].toLowerCase();
-        const cmd = allCommands.find(c => c.name.toLowerCase() === name);
-        if (!cmd) return api.sendMessage(`❌ | Command "${name}" not found!`, event.threadID);
-
-        return api.sendMessage(
-          `╭──────────────💫
-│ 🧩 Name: ${cmd.name}
-│ 💬 Description: ${cmd.desc}
-│ ⚙️ Category: ${cmd.cat}
-│ 📘 Usage: ${prefix}${cmd.name}
-╰────────────────💫`,
-          event.threadID
-        );
-      }
-
-      // build message
-      let msg = `╭──────『 𝗕𝗢𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗠𝗘𝗡𝗨 』──────╮\n`;
-
-      const cats = Object.keys(byCat).sort();
-      for (const cat of cats) {
-        const emoji = catEmoji[cat] || "✨";
-        msg += `\n╭──────${emoji} ${cat.toUpperCase()} ──────\n`;
-        for (const cmd of byCat[cat]) {
-          const e = cmdEmoji[cmd] || "🔹";
-          msg += `│ ${e} ${cmd}\n`;
-        }
-        msg += `╰─────────────────────\n`;
-      }
-
-      msg += `\n💡 Type: ${prefix}help <command>\nTo view command details.`;
-
-      return api.sendMessage(msg, event.threadID);
-    } catch (err) {
-      return api.sendMessage(`❌ | Error: ${err.message}`, event.threadID);
+      const details = `
+╭──────『 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗜𝗡𝗙𝗢 』──────╮
+│ 💫 𝗡𝗔𝗠𝗘: ${info.name || findCommand.name}
+│ 🧩 𝗖𝗔𝗧𝗘𝗚𝗢𝗥𝗬: ${info.category || findCommand.cat}
+│ 💬 𝗗𝗘𝗦𝗖: ${info.longDescription || info.shortDescription || "No description"}
+│ ⚙️ 𝗨𝗦𝗔𝗚𝗘: ${usage}
+╰────────────────────────────╯
+`;
+      return message.reply(details);
     }
+
+    // Emoji for category
+    const emojiMap = {
+      admin: "👑",
+      ai: "🤖",
+      fun: "🎭",
+      game: "🎮",
+      system: "⚙️",
+      image: "🖼️",
+      group: "👥",
+      music: "🎵",
+      media: "📺",
+      utility: "📌",
+      text: "💬",
+      custom: "✨",
+      islamic: "🕌",
+      owner: "🧠",
+      other: "💡",
+    };
+
+    // Create menu list
+    let menu = "╭──────『 𝗕𝗢𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗠𝗘𝗡𝗨 』──────╮\n\n";
+    for (const [cat, cmds] of Object.entries(categories)) {
+      const icon = emojiMap[cat.toLowerCase()] || "📁";
+      menu += `╭──────${icon} ${cat.toUpperCase()} ──────\n`;
+      cmds.forEach(cmd => (menu += `│ 🔹 ${cmd}\n`));
+      menu += `╰─────────────────────\n\n`;
+    }
+    menu += "💡 Type: .help <command> to view details.";
+
+    message.reply(menu);
   },
 };
