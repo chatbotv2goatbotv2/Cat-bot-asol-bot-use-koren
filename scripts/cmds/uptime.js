@@ -4,7 +4,7 @@ module.exports = {
   config: {
     name: "uptime",
     version: "1.5",
-    author: "Helal Islam",
+    author: "Helal_Islam",
     countDown: 5,
     role: 0,
     shortDescription: "Show bot uptime in stylish glow mode",
