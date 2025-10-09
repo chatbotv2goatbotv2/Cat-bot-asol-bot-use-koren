@@ -1,23 +1,28 @@
+const { performance } = require("perf_hooks");
+
 module.exports = {
   config: {
     name: "uptime",
-    version: "3.0",
-    author: "Helal Islam",
-    countDown: 5,
+    aliases: ["upt"],
+    version: "6.0",
+    author: "Helal",
     role: 0,
-    shortDescription: "Check bot uptime with animated loading bar",
-    longDescription: "Shows how long the bot has been running with cool animated emoji loading effect.",
-    category: "system",
-    guide: "{pn}uptime"
+    shortDescription: "Show stylish bot uptime",
+    category: "system"
   },
 
-  onStart: async function ({ message }) {
-    const startTime = process.uptime();
-    const hours = Math.floor(startTime / 3600);
-    const minutes = Math.floor((startTime % 3600) / 60);
-    const seconds = Math.floor(startTime % 60);
+  onStart: async function ({ api, event }) {
+    const startTime = performance.now();
 
-    const stages = [
+    // uptime data
+    const uptime = process.uptime();
+    const hours = Math.floor(uptime / 3600);
+    const minutes = Math.floor((uptime % 3600) / 60);
+    const seconds = Math.floor(uptime % 60);
+    const ram = (process.memoryUsage().rss / 1024 / 1024).toFixed(2);
+
+    // loading stages
+    const loadSteps = [
       "▱▱▱▱▱▱ 0%",
       "▰▱▱▱▱▱ 20%",
       "▰▰▱▱▱▱ 40%",
@@ -26,20 +31,29 @@ module.exports = {
       "▰▰▰▰▰▰ 100%"
     ];
 
-    const msg = await message.reply("⚙️ Loading Uptime...");
+    // first send loading message
+    let msg = await api.sendMessage("⚙️ | Checking bot status...", event.threadID);
 
-    for (let i = 0; i < stages.length; i++) {
-      await new Promise(res => setTimeout(res, 1000));
-      await message.edit(msg.messageID, `⚙️ Loading Uptime...\n${stages[i]}`);
+    // edit loading gradually
+    for (let step of loadSteps) {
+      await new Promise(r => setTimeout(r, 700));
+      await api.editMessage(`🚀 Loading ${step}`, msg.messageID);
     }
 
-    const uptimeMsg = 
-`✅ 𝗕𝗢𝗧 𝗨𝗣𝗧𝗜𝗠𝗘 𝗥𝗘𝗣𝗢𝗥𝗧  
-🕒 𝗧𝗜𝗠𝗘 𝗨𝗣: ${hours}h ${minutes}m ${seconds}s  
-💾 𝗠𝗘𝗠𝗢𝗥𝗬 𝗨𝗦𝗘𝗗: ${(process.memoryUsage().rss / 1024 / 1024).toFixed(2)} MB  
-⚡ 𝗣𝗢𝗪𝗘𝗥𝗘𝗗 𝗕𝗬: 𝐇𝐞𝐥𝐚𝐥 𝐈𝐬𝐥𝐚𝐦`;
+    // final uptime message
+    await new Promise(r => setTimeout(r, 700));
+    const latency = (performance.now() - startTime).toFixed(0);
 
-    await new Promise(res => setTimeout(res, 800));
-    await message.edit(msg.messageID, uptimeMsg);
+    const finalMsg = `
+╭───『 🤖 𝗕𝗢𝗧 𝗦𝗧𝗔𝗧𝗨𝗦 』───╮
+│⏱️ 𝗨𝗽𝘁𝗶𝗺𝗲: ${hours}h ${minutes}m ${seconds}s
+│💾 𝗠𝗲𝗺𝗼𝗿𝘆: ${ram} MB
+│⚡ 𝗥𝗲𝘀𝗽𝗼𝗻𝘀𝗲: ${latency}ms
+│💫 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗕𝘆: Helal
+╰──────────────────────╯
+✨ Stay Cool & Stable 😎
+`;
+
+    api.editMessage(finalMsg, msg.messageID);
   }
 };
