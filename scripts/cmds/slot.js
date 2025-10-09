@@ -2,7 +2,7 @@ module.exports = {
   config: {
     name: "slot",
     version: "3.4",
-    author: "SHIFAT",
+    author: "HELAL",
     description: {
       role: 2,
       en: "Lucky Slot Machine (Goat Bot)",
@@ -37,7 +37,7 @@ module.exports = {
     await message.reply(getLang("spinning"));
 
     // Slots
-    const slots = ["💚", "🧡", "❤️", "💜", "💙", "💛"];
+    const slots = ["💚", "🧡", "❤️", "💜", "💙", "💖"];
     const slot1 = slots[Math.floor(Math.random() * slots.length)];
     const slot2 = slots[Math.floor(Math.random() * slots.length)];
     const slot3 = slots[Math.floor(Math.random() * slots.length)];
@@ -85,7 +85,7 @@ function calcWinnings(slot1, slot2, slot3, betAmount) {
 }
 
 function formatResult(slot1, slot2, slot3, winnings, getLang, betAmount, balance) {
-  const slotLine = `✨ Kakashi Slot System ✨\n═✦══════✦✦══════✦═\n\n🎰 [ ${slot1} | ${slot2} | ${slot3} ] 🎰\n`;
+  const slotLine = '💖 Cat Bot💖\n═✦══════✦✦══════✦═\n\n🎰 [ ${slot1} | ${slot2} | ${slot3} ] 🎰\n`;
 
   let resultMsg;
   if (winnings > 0) {
@@ -100,9 +100,9 @@ function formatResult(slot1, slot2, slot3, winnings, getLang, betAmount, balance
 
   return (
     `${slotLine}\n` +
-    `💵 Bet Amount: $${betAmount}\n` +
-    `📌 Result: ${resultMsg}\n` +
-    `💳 Current Balance: $${balance}\n\n` +
-    `═✦══════✦✦══════✦═`
+    `💹 Bet Amount: $${betAmount}\n` +
+    `📜 Result: ${resultMsg}\n` +
+    `💵 Current Balance: $${balance}\n\n` +
+    `═❤️══════💖══════❤️═`
   );
 }
