@@ -1,19 +1,23 @@
-const os = require("os");
-
 module.exports = {
   config: {
     name: "uptime",
-    version: "2.0",
+    version: "3.0",
     author: "Helal Islam",
+    countDown: 5,
     role: 0,
-    shortDescription: "Show stylish bot uptime",
-    longDescription: "Animated uptime loader with final time details",
-    category: "⚙️ SYSTEM",
+    shortDescription: "Check bot uptime with animated loading bar",
+    longDescription: "Shows how long the bot has been running with cool animated emoji loading effect.",
+    category: "system",
+    guide: "{pn}uptime"
   },
 
-  onStart: async function({ api, event }) {
-    const start = Date.now();
-    let loadingStages = [
+  onStart: async function ({ message }) {
+    const startTime = process.uptime();
+    const hours = Math.floor(startTime / 3600);
+    const minutes = Math.floor((startTime % 3600) / 60);
+    const seconds = Math.floor(startTime % 60);
+
+    const stages = [
       "▱▱▱▱▱▱ 0%",
       "▰▱▱▱▱▱ 20%",
       "▰▰▱▱▱▱ 40%",
@@ -22,32 +26,20 @@ module.exports = {
       "▰▰▰▰▰▰ 100%"
     ];
 
-    let msg = await api.sendMessage("⚙️ Loading uptime...\n▱▱▱▱▱▱ 0%", event.threadID);
-    let i = 1;
+    const msg = await message.reply("⚙️ Loading Uptime...");
 
-    for (const stage of loadingStages.slice(1)) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await api.editMessage(`⚙️ Loading uptime...\n${stage}`, msg.messageID);
+    for (let i = 0; i < stages.length; i++) {
+      await new Promise(res => setTimeout(res, 1000));
+      await message.edit(msg.messageID, `⚙️ Loading Uptime...\n${stages[i]}`);
     }
 
-    const uptimeSeconds = process.uptime();
-    const days = Math.floor(uptimeSeconds / (3600 * 24));
-    const hours = Math.floor((uptimeSeconds % (3600 * 24)) / 3600);
-    const minutes = Math.floor((uptimeSeconds % 3600) / 60);
-    const seconds = Math.floor(uptimeSeconds % 60);
+    const uptimeMsg = 
+`✅ 𝗕𝗢𝗧 𝗨𝗣𝗧𝗜𝗠𝗘 𝗥𝗘𝗣𝗢𝗥𝗧  
+🕒 𝗧𝗜𝗠𝗘 𝗨𝗣: ${hours}h ${minutes}m ${seconds}s  
+💾 𝗠𝗘𝗠𝗢𝗥𝗬 𝗨𝗦𝗘𝗗: ${(process.memoryUsage().rss / 1024 / 1024).toFixed(2)} MB  
+⚡ 𝗣𝗢𝗪𝗘𝗥𝗘𝗗 𝗕𝗬: 𝐇𝐞𝐥𝐚𝐥 𝐈𝐬𝐥𝐚𝐦`;
 
-    const uptimeText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-    const memoryUsage = (process.memoryUsage().rss / 1024 / 1024).toFixed(2);
-    const cpuModel = os.cpus()[0].model;
-
-    const finalText = `✅ | 𝗕𝗼𝘁 𝗨𝗽𝘁𝗶𝗺𝗲 𝗥𝗲𝗽𝗼𝗿𝘁\n\n` +
-      `🕒 𝗧𝗶𝗺𝗲 𝗨𝗽: ${uptimeText}\n` +
-      `💾 𝗠𝗲𝗺𝗼𝗿𝘆: ${memoryUsage} MB\n` +
-      `💻 𝗖𝗣𝗨: ${cpuModel}\n` +
-      `⚡ 𝗦𝘁𝗮𝘁𝘂𝘀: 𝗢𝗻𝗹𝗶𝗻𝗲 ✅\n\n` +
-      `🔰 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗕𝘆 𝐇𝐞𝐥𝐚𝐥 𝐈𝐬𝐥𝐚𝐦`;
-
-    await new Promise(resolve => setTimeout(resolve, 800));
-    await api.editMessage(finalText, msg.messageID);
+    await new Promise(res => setTimeout(res, 800));
+    await message.edit(msg.messageID, uptimeMsg);
   }
 };
