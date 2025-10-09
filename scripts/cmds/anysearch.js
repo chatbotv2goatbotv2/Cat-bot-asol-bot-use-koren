@@ -50,6 +50,6 @@ module.exports = {
     }
 
     const video = Reply.videos[num - 1];
-    return message.reply(`🎬 ${video.title}\n🔗 ${video.url}`);
+    return message.reply(`🎬 ${${video.url}`);
   }
 };
