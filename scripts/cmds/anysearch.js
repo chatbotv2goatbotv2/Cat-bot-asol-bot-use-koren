@@ -5,7 +5,7 @@ module.exports = {
     name: "anysearch",
     aliases: ["ytsearch", "yts"],
     version: "1.0",
-    author: "Helal Islam",
+    author: "Helal",
     category: "media",
     shortDescription: "Search YouTube and send links",
     longDescription: "Search YouTube videos & reply number to show link.",
