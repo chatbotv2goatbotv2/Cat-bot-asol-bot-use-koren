@@ -4,78 +4,83 @@ const path = require("path");
 module.exports = {
   config: {
     name: "help",
-    aliases: ["menu", "cmd", "commands"],
-    version: "2.0",
-    author: "Helal",
+    aliases: ["menu"],
+    version: "1.2",
     role: 0,
-    description: "Show all available commands or details of a specific one",
+    shortDescription: "Show all bot commands",
+    longDescription: "Stylish help command with category icons and usage info",
     category: "system",
-    usage: ".help [command]",
+    guide: {
+      en: "{pn} or {pn} <command name>"
+    }
   },
 
-  onStart: async function ({ api, event, args, commandModules }) {
-    const { threadID, messageID } = event;
+  onStart: async function ({ message, args, event }) {
+    try {
+      const commandsPath = path.join(__dirname, "..");
+      const categories = {};
+      const emojiMap = {
+        game: "🎮",
+        quiz: "❓",
+        utility: "📌",
+        image: "🖼️",
+        info: "ℹ️",
+        system: "⚙️",
+        ai: "🤖",
+        fun: "🎭",
+        music: "🎵",
+        tool: "🧰",
+        social: "💬",
+        group: "👥",
+        admin: "👑",
+        economy: "💰"
+      };
 
-    // command name check
-    if (args[0]) {
-      const cmdName = args[0].toLowerCase();
-      const command = commandModules.get(cmdName);
-      if (!command) return api.sendMessage(`❌ | Command "${cmdName}" not found!`, threadID, messageID);
+      // Auto detect all commands
+      fs.readdirSync(commandsPath).forEach(file => {
+        if (!file.endsWith(".js")) return;
+        const cmd = require(path.join(commandsPath, file));
+        if (!cmd.config || !cmd.config.name) return;
+        const category = cmd.config.category || "other";
+        if (!categories[category]) categories[category] = [];
+        categories[category].push(cmd.config);
+      });
 
-      const info = command.config || {};
-      const emoji = getEmoji(info.category);
+      // if command name provided
+      if (args[0]) {
+        const name = args[0].toLowerCase();
+        const cmdFile = fs.readdirSync(commandsPath).find(f => f.startsWith(name + ".js"));
+        if (!cmdFile) return message.reply(`❌ | Command "${name}" not found!`);
+        const cmd = require(path.join(commandsPath, cmdFile));
+        const e = emojiMap[cmd.config.category] || "✨";
+        const usage = cmd.config.guide?.en || "No usage info";
+        const desc = cmd.config.longDescription || cmd.config.shortDescription || "No description";
+        return message.reply(
+`╭──${e} ${cmd.config.name.toUpperCase()} ──╮
+│ 💬 ${desc}
+│ 📘 Usage: ${usage}
+│ 🗂 Category: ${cmd.config.category || "other"}
+│ 🔢 Version: ${cmd.config.version || "1.0"}
+│ 👥 Role: ${cmd.config.role == 2 ? "Admin" : cmd.config.role == 1 ? "GroupAdmin" : "Everyone"}
+╰───────────────────💫`
+        );
+      }
 
-      return api.sendMessage(
-        `╭── ${emoji} ${info.name?.toUpperCase() || cmdName} ──╮\n` +
-        `📘 Description: ${info.description || "No description"}\n` +
-        `⚙️ Category: ${info.category || "Unknown"}\n` +
-        `🧩 Usage: ${info.usage || ".help <command>"}\n` +
-        `💫 Version: ${info.version || "1.0"}\n` +
-        `╰────────────────────╯`,
-        threadID,
-        messageID
-      );
+      // Show all commands
+      let msg = "╭───✨ 𝗕𝗢𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 ✨───╮\n";
+      for (const category in categories) {
+        const e = emojiMap[category] || "📂";
+        msg += `\n${e} ${category.toUpperCase()}\n`;
+        categories[category].forEach(cmd => {
+          msg += `  • ${cmd.name}\n`;
+        });
+      }
+      msg += "\n💡 Use: .help <command> to view details\n╰────────────────────────💫";
+      message.reply(msg);
+
+    } catch (err) {
+      console.error(err);
+      message.reply("❌ | Error in help command!");
     }
-
-    // list all commands
-    const categories = {};
-    commandModules.forEach(cmd => {
-      const cat = cmd.config.category || "Other";
-      if (!categories[cat]) categories[cat] = [];
-      categories[cat].push(cmd.config.name);
-    });
-
-    let msg = "╭──────『 𝗕𝗢𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗠𝗘𝗡𝗨 』──────╮\n\n";
-
-    for (const [category, cmds] of Object.entries(categories)) {
-      const emoji = getEmoji(category);
-      msg += `╭── ${emoji} ${category.toUpperCase()} ──╮\n`;
-      msg += cmds.map(c => `│ ${emoji} ${c}`).join("\n") + "\n";
-      msg += "╰────────────────────╯\n\n";
-    }
-
-    msg += "💡 Type: `.help <command>` to view details.\n\n⚡ Powered by Helal";
-
-    api.sendMessage(msg, threadID, messageID);
-  },
+  }
 };
-
-function getEmoji(category) {
-  category = category?.toLowerCase();
-  if (category.includes("admin")) return "👑";
-  if (category.includes("game")) return "🎮";
-  if (category.includes("quiz")) return "❓";
-  if (category.includes("image")) return "🖼️";
-  if (category.includes("media")) return "🎵";
-  if (category.includes("ai")) return "🤖";
-  if (category.includes("system")) return "⚙️";
-  if (category.includes("utility")) return "📌";
-  if (category.includes("fun")) return "🎭";
-  if (category.includes("info")) return "ℹ️";
-  if (category.includes("love")) return "💖";
-  if (category.includes("group")) return "👥";
-  if (category.includes("islam")) return "🕌";
-  if (category.includes("rank")) return "🏆";
-  if (category.includes("tool")) return "🧰";
-  return "💫";
-}
