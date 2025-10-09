@@ -1,29 +1,32 @@
+const moment = require("moment-timezone");
+
 module.exports = {
   config: {
     name: "uptimeauto",
-    version: "1.0",
+    version: "2.0",
     author: "Helal",
-    role: 0,
-    shortDescription: "Auto send uptime message every 12 minutes",
-    longDescription: "Sends 'Cat is running ✅' in all active groups every 12 minutes automatically",
-    category: "system"
+    category: "system",
+    shortDescription: "Auto send uptime message in group",
   },
 
-  onStart: async function ({ api }) {
-    // 12 minutes = 720000 ms
-    const interval = 12 * 60 * 1000;
+  onLoad: function ({ api }) {
+    const INTERVAL = 12 * 60 * 1000; // 12 minutes (change if needed)
 
     setInterval(async () => {
+      const now = moment().tz("Asia/Dhaka").format("hh:mm A, DD/MM/YYYY");
+      const message = `🌺 Cat is running ✅\n🕒 ${now}`;
+
+      // Fetch all groups (threads)
       const threads = await api.getThreadList(100, null, ["INBOX"]);
       for (const thread of threads) {
-        try {
-          if (thread.isGroup && thread.name) {
-            await api.sendMessage("🌺 Cat is running ✅", thread.threadID);
+        if (thread.isGroup && thread.name) {
+          try {
+            api.sendMessage(message, thread.threadID);
+          } catch (e) {
+            console.log(`[Error] Couldn't send in: ${thread.threadID}`);
           }
-        } catch (e) {
-          console.log(`❌ Failed to send uptime message in: ${thread.threadID}`);
         }
       }
-    }, interval);
-  }
+    }, INTERVAL);
+  },
 };
