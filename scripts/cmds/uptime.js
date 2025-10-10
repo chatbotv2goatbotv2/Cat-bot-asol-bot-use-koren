@@ -1,59 +1,65 @@
-const { performance } = require("perf_hooks");
+const os = require("os");
+const moment = require("moment");
 
 module.exports = {
   config: {
     name: "uptime",
-    aliases: ["upt"],
-    version: "6.0",
-    author: "Helal",
+    version: "3.0",
+    author: "Helal x GPT",
+    countDown: 5,
     role: 0,
-    shortDescription: "Show stylish bot uptime",
-    category: "system"
+    shortDescription: "Show bot uptime, ping & system info",
+    longDescription: "Check how long the bot has been online with ping and hardware details.",
+    category: "system",
+    guide: "{p}uptime"
   },
 
   onStart: async function ({ api, event }) {
-    const startTime = performance.now();
+    try {
+      const start = Date.now();
 
-    // uptime data
-    const uptime = process.uptime();
-    const hours = Math.floor(uptime / 3600);
-    const minutes = Math.floor((uptime % 3600) / 60);
-    const seconds = Math.floor(uptime % 60);
-    const ram = (process.memoryUsage().rss / 1024 / 1024).toFixed(2);
+      // Ping test
+      await api.sendMessage("⏳ Checking system status...", event.threadID);
+      const ping = Date.now() - start;
 
-    // loading stages
-    const loadSteps = [
-      "▱▱▱▱▱▱ 0%",
-      "▰▱▱▱▱▱ 20%",
-      "▰▰▱▱▱▱ 40%",
-      "▰▰▰▱▱▱ 60%",
-      "▰▰▰▰▱▱ 80%",
-      "▰▰▰▰▰▰ 100%"
-    ];
+      // Uptime
+      const totalSeconds = process.uptime();
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor(totalSeconds / 3600) % 24;
+      const minutes = Math.floor(totalSeconds / 60) % 60;
+      const seconds = Math.floor(totalSeconds % 60);
 
-    // first send loading message
-    let msg = await api.sendMessage("⚙️ | Checking bot status...", event.threadID);
+      let uptimeMsg = "";
+      if (days > 0) uptimeMsg += `🗓️ ${days} day${days > 1 ? "s" : ""} `;
+      uptimeMsg += `⏰ ${hours}h ${minutes}m ${seconds}s`;
 
-    // edit loading gradually
-    for (let step of loadSteps) {
-      await new Promise(r => setTimeout(r, 700));
-      await api.editMessage(`🚀 Loading ${step}`, msg.messageID);
+      // Time
+      const now = moment().format("dddd, MMMM Do YYYY, h:mm:ss A");
+
+      // System Info
+      const platform = os.platform();
+      const cpuModel = os.cpus()[0].model;
+      const totalMem = (os.totalmem() / 1024 / 1024 / 1024).toFixed(2);
+      const freeMem = (os.freemem() / 1024 / 1024 / 1024).toFixed(2);
+      const usedMem = (totalMem - freeMem).toFixed(2);
+
+      // Stylish message
+      const msg = `✨ 𝗕𝗢𝗧 𝗦𝗧𝗔𝗧𝗨𝗦 ✨
+──────────────────────────
+⚙️ 𝗨𝗽𝘁𝗶𝗺𝗲: ${uptimeMsg}
+⚡ 𝗣𝗶𝗻𝗴: ${ping} ms
+🕓 𝗧𝗶𝗺𝗲: ${now}
+──────────────────────────
+💻 𝗦𝗬𝗦𝗧𝗘𝗠 𝗜𝗡𝗙𝗢 💡
+🧠 CPU: ${cpuModel}
+🪟 Platform: ${platform}
+📦 RAM: ${usedMem}GB / ${totalMem}GB
+──────────────────────────
+🤖 𝗕𝗼𝘁 𝗼𝗻𝗹𝗶𝗻𝗲 & 𝗿𝗲𝗮𝗱𝘆 𝘁𝗼 𝘀𝗲𝗿𝘃𝗲! 🚀`;
+
+      api.sendMessage(msg, event.threadID, event.messageID);
+    } catch (err) {
+      api.sendMessage(`❌ Error while checking uptime: ${err.message}`, event.threadID, event.messageID);
     }
-
-    // final uptime message
-    await new Promise(r => setTimeout(r, 700));
-    const latency = (performance.now() - startTime).toFixed(0);
-
-    const finalMsg = `
-╭───『 🤖 𝗕𝗢𝗧 𝗦𝗧𝗔𝗧𝗨𝗦 』───╮
-│⏱️ 𝗨𝗽𝘁𝗶𝗺𝗲: ${hours}h ${minutes}m ${seconds}s
-│💾 𝗠𝗲𝗺𝗼𝗿𝘆: ${ram} MB
-│⚡ 𝗥𝗲𝘀𝗽𝗼𝗻𝘀𝗲: ${latency}ms
-│💫 𝗣𝗼𝘄𝗲𝗿𝗲𝗱 𝗕𝘆: Helal
-╰──────────────────────╯
-✨ Stay Cool & Stable 😎
-`;
-
-    api.editMessage(finalMsg, msg.messageID);
   }
 };
