@@ -1,7 +1,3 @@
-// rps.js
-// Rock Paper Scissors game command for Messenger bot
-// Reply-based answers, auto unsend, score update
-
 const fs = require("fs");
 const path = require("path");
 
@@ -16,88 +12,75 @@ function saveScores(scores) {
   fs.writeFileSync(dataFile, JSON.stringify(scores, null, 2));
 }
 
-const choices = ["rock", "paper", "scissors"];
+const choices = ["rock","paper","scissors"];
 
 function getBotChoice() {
-  return choices[Math.floor(Math.random() * choices.length)];
-}
-
-function decideWinner(user, bot) {
-  if (user === bot) return "draw";
-  if (
-    (user === "rock" && bot === "scissors") ||
-    (user === "paper" && bot === "rock") ||
-    (user === "scissors" && bot === "paper")
-  ) return "user";
-  return "bot";
+  return choices[Math.floor(Math.random()*choices.length)];
 }
 
 module.exports = {
   config: {
     name: "rps",
-    version: "1.0",
-    author: "Helal x GPT",
-    role: 0,
-    shortDescription: "Play Rock Paper Scissors",
     category: "fun",
-    guide: "{pn} rps"
+    description: "Play Rock Paper Scissors"
   },
 
   onStart: async function({ api, event }) {
     const threadID = event.threadID;
-
-    if (!global.gameThreads) global.gameThreads = {};
-    if (!global.gameThreads[threadID]) global.gameThreads[threadID]) global.gameThreads[threadID] = {};
 
     const sentMsg = await api.sendMessage(
       "✂️ Rock Paper Scissors!\nReply with rock, paper, or scissors",
       threadID
     );
 
-    global.gameThreads[threadID]["rps"] = {
+    if(!global.GoatBot.games) global.GoatBot.games={};
+    global.GoatBot.games[threadID+"_rps"] = {
       messageID: sentMsg.messageID,
-      timeout: setTimeout(() => {
+      playerID: event.senderID,
+      timeout: setTimeout(()=>{
         api.sendMessage("⏰ Time's up! Game over!", threadID);
         api.unsendMessage(sentMsg.messageID);
-        global.gameThreads[threadID]["rps"] = null;
-      }, 2 * 60 * 1000)
+        delete global.GoatBot.games[threadID+"_rps"];
+      },2*60*1000)
     };
   },
 
-  onChat: async function({ api, event }) {
-    const threadID = event.threadID;
-    const reply = event.messageReply;
-    const body = (event.body || "").trim().toLowerCase();
-    if (!reply || !body) return;
-    if (!global.gameThreads || !global.gameThreads[threadID]) return;
+  onReply: async function({ api, event, Reply }) {
+    const key = event.threadID+"_rps";
+    const current = global.GoatBot.games[key];
+    if(!current || event.messageReply.messageID !== current.messageID) return;
+    if(event.senderID !== current.playerID) return;
 
-    const current = global.gameThreads[threadID]["rps"];
-    if (!current || !current.messageID) return;
-    if (reply.messageID !== current.messageID) return;
-
-    if (!choices.includes(body))
-      return api.sendMessage("❌ Invalid choice! Use rock, paper, or scissors.", threadID);
+    const userChoice = (event.body||"").toLowerCase();
+    if(!choices.includes(userChoice)) return api.sendMessage("❌ Invalid! Use rock, paper, or scissors", event.threadID);
 
     const botChoice = getBotChoice();
-    const result = decideWinner(body, botChoice);
+    let result="";
+    if(userChoice===botChoice) result="draw";
+    else if(
+      (userChoice==="rock" && botChoice==="scissors") ||
+      (userChoice==="paper" && botChoice==="rock") ||
+      (userChoice==="scissors" && botChoice==="paper")
+    ) result="user";
+    else result="bot";
+
     const user = event.senderName || "Unknown";
-
     const scores = loadScores();
-    if (!scores[threadID]) scores[threadID] = {};
-    if (!scores[threadID]["rps"]) scores[threadID]["rps"] = {};
+    if(!scores[event.threadID]) scores[event.threadID]={};
+    if(!scores[event.threadID]["rps"]) scores[event.threadID]["rps"]={};
 
-    if (result === "user") {
-      api.sendMessage(`🎉 Congratulations ${user}! You won!\nBot chose: ${botChoice}`, threadID);
-      scores[threadID]["rps"][user] = (scores[threadID]["rps"][user] || 0) + 1;
-    } else if (result === "bot") {
-      api.sendMessage(`💀 Bot won!\nBot chose: ${botChoice}`, threadID);
+    if(result==="user"){
+      api.sendMessage(`🎉 Congratulations ${user}! You won!\nBot chose: ${botChoice}`, event.threadID);
+      scores[event.threadID]["rps"][user] = (scores[event.threadID]["rps"][user]||0)+1;
+    } else if(result==="bot"){
+      api.sendMessage(`💀 Bot won!\nBot chose: ${botChoice}`, event.threadID);
     } else {
-      api.sendMessage(`🤝 Draw!\nBot chose: ${botChoice}`, threadID);
+      api.sendMessage(`🤝 Draw!\nBot chose: ${botChoice}`, event.threadID);
     }
 
     saveScores(scores);
     clearTimeout(current.timeout);
     api.unsendMessage(current.messageID);
-    global.gameThreads[threadID]["rps"] = null;
+    delete global.GoatBot.games[key];
   }
 };
