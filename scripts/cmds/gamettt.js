@@ -1,15 +1,15 @@
 const fs = require("fs");
 const path = require("path");
 
-const dataFile = path.join(__dirname, "gameScores.json");
-if (!fs.existsSync(dataFile)) fs.writeFileSync(dataFile, "{}");
+const dataFile = path.join(__dirname,"gameScores.json");
+if(!fs.existsSync(dataFile)) fs.writeFileSync(dataFile,"{}");
 
 function loadScores() {
   return JSON.parse(fs.readFileSync(dataFile));
 }
 
 function saveScores(scores) {
-  fs.writeFileSync(dataFile, JSON.stringify(scores, null, 2));
+  fs.writeFileSync(dataFile, JSON.stringify(scores,null,2));
 }
 
 function getEmptyBoard() {
@@ -34,11 +34,18 @@ function checkWinner(b) {
   return null;
 }
 
+const posMap = {
+  A1:[0,0], A2:[0,1], A3:[0,2],
+  B1:[1,0], B2:[1,1], B3:[1,2],
+  C1:[2,0], C2:[2,1], C3:[2,2]
+};
+
 module.exports = {
   config: {
     name: "ttt",
     category: "fun",
-    description: "Play Tic Tac Toe"
+    description: "Tic Tac Toe game",
+    guide: "/ttt"
   },
 
   onStart: async function({ api, event }) {
@@ -46,20 +53,15 @@ module.exports = {
     const board = getEmptyBoard();
 
     const sentMsg = await api.sendMessage(
-      `🎮 Tic Tac Toe!\nReply with move (A1,B2,C3...)\n\n${formatBoard(board)}`,
+      `🎮 Tic Tac Toe!\nReply to this message with move (A1,B2,C3...)\n\n${formatBoard(board)}`,
       threadID
     );
 
-    if(!global.GoatBot.games) global.GoatBot.games = {};
+    if(!global.GoatBot.games) global.GoatBot.games={};
     global.GoatBot.games[threadID+"_ttt"] = {
       messageID: sentMsg.messageID,
-      board: board,
       playerID: event.senderID,
-      timeout: setTimeout(()=>{
-        api.sendMessage("⏰ Time's up! Game over!", threadID);
-        api.unsendMessage(sentMsg.messageID);
-        delete global.GoatBot.games[threadID+"_ttt"];
-      }, 2*60*1000)
+      board: board
     };
   },
 
@@ -70,25 +72,23 @@ module.exports = {
     if(event.senderID !== current.playerID) return;
 
     const body = (event.body||"").toUpperCase();
-    const posMap = { "A1":[0,0],"A2":[0,1],"A3":[0,2],"B1":[1,0],"B2":[1,1],"B3":[1,2],"C1":[2,0],"C2":[2,1],"C3":[2,2] };
     if(!posMap[body]) return api.sendMessage("❌ Invalid move! Use A1,B2,C3...", event.threadID);
 
     const [x,y] = posMap[body];
     if(current.board[x][y]!=="-") return api.sendMessage("❌ Already filled!", event.threadID);
 
     current.board[x][y]="X";
-    let winner = checkWinner(current.board);
 
-    const scores = JSON.parse(fs.readFileSync(path.join(__dirname,"gameScores.json")));
+    let winner = checkWinner(current.board);
+    const scores = loadScores();
+    if(!scores[event.threadID]) scores[event.threadID]={};
+    if(!scores[event.threadID]["ttt"]) scores[event.threadID]["ttt"]={};
+    const user = event.senderName || "Unknown";
 
     if(winner){
-      clearTimeout(current.timeout);
-      api.sendMessage(`🎉 Congratulations! You won!\n${formatBoard(current.board)}`, event.threadID);
+      api.sendMessage(`🎉 Congratulations ${user}! You won!\n${formatBoard(current.board)}`, event.threadID);
 
-      // Update score
-      if(!scores[event.threadID]) scores[event.threadID]={};
-      if(!scores[event.threadID]["ttt"]) scores[event.threadID]["ttt"]={};
-      scores[event.threadID]["ttt"][event.senderName] = (scores[event.threadID]["ttt"][event.senderName]||0)+1;
+      scores[event.threadID]["ttt"][user] = (scores[event.threadID]["ttt"][user]||0)+1;
       saveScores(scores);
 
       api.unsendMessage(current.messageID);
@@ -102,23 +102,21 @@ module.exports = {
         }
       }
       if(empty.length===0){
-        clearTimeout(current.timeout);
-        api.sendMessage("🤝 Game Draw!\n"+formatBoard(current.board), event.threadID);
+        api.sendMessage("🤝 Draw!\n"+formatBoard(current.board), event.threadID);
         api.unsendMessage(current.messageID);
         delete global.GoatBot.games[key];
         return;
       }
-      const [bx,by]=empty[Math.floor(Math.random()*empty.length)];
+      const [bx,by] = empty[Math.floor(Math.random()*empty.length)];
       current.board[bx][by]="O";
 
       winner = checkWinner(current.board);
       if(winner){
-        clearTimeout(current.timeout);
         api.sendMessage("💀 Bot won!\n"+formatBoard(current.board), event.threadID);
         api.unsendMessage(current.messageID);
         delete global.GoatBot.games[key];
       } else {
-        await api.sendMessage("🎮 Tic Tac Toe!\nReply with your move\n\n"+formatBoard(current.board), event.threadID);
+        await api.sendMessage(`🎮 Tic Tac Toe!\nReply with your move\n\n${formatBoard(current.board)}`, event.threadID);
       }
     }
   }
