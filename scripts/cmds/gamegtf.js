@@ -14,12 +14,12 @@ function saveScores(scores) {
 
 // Sample flags (Banglish)
 const flags = [
-  { country: "France", emoji: "🇫🇷" },
-  { country: "Japan", emoji: "🇯🇵" },
-  { country: "USA", emoji: "🇺🇸" },
-  { country: "Germany", emoji: "🇩🇪" },
   { country: "India", emoji: "🇮🇳" },
+  { country: "USA", emoji: "🇺🇸" },
+  { country: "Japan", emoji: "🇯🇵" },
+  { country: "France", emoji: "🇫🇷" },
   { country: "Brazil", emoji: "🇧🇷" },
+  { country: "Germany", emoji: "🇩🇪" },
   { country: "Canada", emoji: "🇨🇦" }
 ];
 
@@ -31,7 +31,8 @@ module.exports = {
   config: {
     name: "gg",
     category: "fun",
-    description: "Guess the Flag game"
+    description: "Guess the Flag game",
+    guide: "/gg"
   },
 
   onStart: async function({ api, event }) {
@@ -39,7 +40,7 @@ module.exports = {
     const flag = randomFlag();
 
     const sentMsg = await api.sendMessage(
-      `🧩 Guess the Flag!\n${flag.emoji}\nReply with country name (Banglish)\n⏳ 2 minutes only!`,
+      `🧩 Guess the Flag!\n${flag.emoji}\nReply to this message with country name (Banglish)`,
       threadID
     );
 
@@ -47,12 +48,7 @@ module.exports = {
     global.GoatBot.games[threadID+"_gg"] = {
       messageID: sentMsg.messageID,
       playerID: event.senderID,
-      answer: flag.country.toLowerCase(),
-      timeout: setTimeout(()=>{
-        api.sendMessage(`⏰ Time's up! Correct answer: ${flag.country}`, threadID);
-        api.unsendMessage(sentMsg.messageID);
-        delete global.GoatBot.games[threadID+"_gg"];
-      },2*60*1000)
+      answer: flag.country.toLowerCase()
     };
   },
 
@@ -69,17 +65,17 @@ module.exports = {
     if(!scores[event.threadID]["gg"]) scores[event.threadID]["gg"]={};
 
     if(body === current.answer){
-      api.sendMessage(`🎉 Congratulations ${user}! Correct answer: ${current.answer}`, event.threadID);
+      api.sendMessage(`🎉 Congratulations ${user}! Right answer: ${current.answer}`, event.threadID);
 
-      // update score
+      // Update score
       scores[event.threadID]["gg"][user] = (scores[event.threadID]["gg"][user]||0)+1;
       saveScores(scores);
 
-      clearTimeout(current.timeout);
+      // Auto unsend flag message
       api.unsendMessage(current.messageID);
       delete global.GoatBot.games[key];
     } else {
-      api.sendMessage("❌ Wrong answer! Try again.", event.threadID);
+      api.sendMessage(`❌ Wrong answer! Try again.`, event.threadID);
     }
   }
 };
