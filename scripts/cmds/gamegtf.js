@@ -1,7 +1,3 @@
-// guessflag.js
-// Guess the Flag game command for Messenger bot
-// Reply-based answers, auto unsend, score update
-
 const fs = require("fs");
 const path = require("path");
 
@@ -16,7 +12,7 @@ function saveScores(scores) {
   fs.writeFileSync(dataFile, JSON.stringify(scores, null, 2));
 }
 
-// Sample flags
+// Sample flags (Banglish)
 const flags = [
   { country: "France", emoji: "🇫🇷" },
   { country: "Japan", emoji: "🇯🇵" },
@@ -28,69 +24,59 @@ const flags = [
 ];
 
 function randomFlag() {
-  return flags[Math.floor(Math.random() * flags.length)];
+  return flags[Math.floor(Math.random()*flags.length)];
 }
 
 module.exports = {
   config: {
     name: "guessflag",
-    version: "1.0",
-    author: "Helal x GPT",
-    role: 0,
-    shortDescription: "Guess the Flag game",
     category: "fun",
-    guide: "{pn} guessflag"
+    description: "Guess the Flag game"
   },
 
   onStart: async function({ api, event }) {
     const threadID = event.threadID;
-
-    if (!global.gameThreads) global.gameThreads = {};
-    if (!global.gameThreads[threadID]) global.gameThreads[threadID]) global.gameThreads[threadID] = {};
-
     const flag = randomFlag();
 
     const sentMsg = await api.sendMessage(
-      `🏳️ Guess the Flag!\n${flag.emoji}\nReply with the country name`,
+      `🧩 Guess the Flag!\n${flag.emoji}\nReply with country name (Banglish)\n⏳ You have 2 minutes!`,
       threadID
     );
 
-    global.gameThreads[threadID]["guessflag"] = {
+    if(!global.GoatBot.games) global.GoatBot.games={};
+    global.GoatBot.games[threadID+"_guessflag"] = {
       messageID: sentMsg.messageID,
-      correctAnswer: flag.country.toLowerCase(),
-      timeout: setTimeout(() => {
+      playerID: event.senderID,
+      answer: flag.country.toLowerCase(),
+      timeout: setTimeout(()=>{
         api.sendMessage(`⏰ Time's up! Correct answer: ${flag.country}`, threadID);
         api.unsendMessage(sentMsg.messageID);
-        global.gameThreads[threadID]["guessflag"] = null;
-      }, 2 * 60 * 1000)
+        delete global.GoatBot.games[threadID+"_guessflag"];
+      },2*60*1000)
     };
   },
 
-  onChat: async function({ api, event }) {
-    const threadID = event.threadID;
-    const reply = event.messageReply;
-    const body = (event.body || "").trim().toLowerCase();
-    if (!reply || !body) return;
-    if (!global.gameThreads || !global.gameThreads[threadID]) return;
+  onReply: async function({ api, event, Reply }) {
+    const key = event.threadID+"_guessflag";
+    const current = global.GoatBot.games[key];
+    if(!current || event.messageReply.messageID!==current.messageID) return;
+    if(event.senderID!==current.playerID) return;
 
-    const current = global.gameThreads[threadID]["guessflag"];
-    if (!current || !current.messageID) return;
-    if (reply.messageID !== current.messageID) return;
-
+    const body = (event.body||"").toLowerCase();
     const user = event.senderName || "Unknown";
     const scores = loadScores();
-    if (!scores[threadID]) scores[threadID] = {};
-    if (!scores[threadID]["guessflag"]) scores[threadID]["guessflag"] = {};
+    if(!scores[event.threadID]) scores[event.threadID]={};
+    if(!scores[event.threadID]["guessflag"]) scores[event.threadID]["guessflag"]={};
 
-    if (body === current.correctAnswer) {
-      api.sendMessage(`🎉 Congratulations ${user}! Correct answer: ${current.correctAnswer}`, threadID);
-      scores[threadID]["guessflag"][user] = (scores[threadID]["guessflag"][user] || 0) + 1;
+    if(body === current.answer.toLowerCase()){
+      api.sendMessage(`🎉 Congratulations ${user}! Correct answer: ${current.answer}`, event.threadID);
+      scores[event.threadID]["guessflag"][user] = (scores[event.threadID]["guessflag"][user]||0)+1;
       saveScores(scores);
       clearTimeout(current.timeout);
       api.unsendMessage(current.messageID);
-      global.gameThreads[threadID]["guessflag"] = null;
+      delete global.GoatBot.games[key];
     } else {
-      api.sendMessage(`❌ Wrong answer! Try again or check later.`, threadID);
+      api.sendMessage("❌ Wrong answer! Try again.", event.threadID);
     }
   }
 };
