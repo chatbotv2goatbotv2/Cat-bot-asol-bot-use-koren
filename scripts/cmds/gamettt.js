@@ -36,7 +36,7 @@ function checkWinner(b) {
 
 module.exports = {
   config: {
-    name: "tictactoe",
+    name: "ttt",
     category: "fun",
     description: "Play Tic Tac Toe"
   },
@@ -51,22 +51,22 @@ module.exports = {
     );
 
     if(!global.GoatBot.games) global.GoatBot.games = {};
-    global.GoatBot.games[threadID+"_tictactoe"] = {
+    global.GoatBot.games[threadID+"_ttt"] = {
       messageID: sentMsg.messageID,
       board: board,
       playerID: event.senderID,
       timeout: setTimeout(()=>{
         api.sendMessage("⏰ Time's up! Game over!", threadID);
         api.unsendMessage(sentMsg.messageID);
-        delete global.GoatBot.games[threadID+"_tictactoe"];
+        delete global.GoatBot.games[threadID+"_ttt"];
       }, 2*60*1000)
     };
   },
 
   onReply: async function({ api, event, Reply }) {
-    const key = event.threadID+"_tictactoe";
+    const key = event.threadID+"_ttt";
     const current = global.GoatBot.games[key];
-    if(!current || event.messageReply.messageID !== current.messageID) return;
+    if(!current || event.messageReply?.messageID !== current.messageID) return;
     if(event.senderID !== current.playerID) return;
 
     const body = (event.body||"").toUpperCase();
@@ -79,15 +79,16 @@ module.exports = {
     current.board[x][y]="X";
     let winner = checkWinner(current.board);
 
+    const scores = JSON.parse(fs.readFileSync(path.join(__dirname,"gameScores.json")));
+
     if(winner){
       clearTimeout(current.timeout);
       api.sendMessage(`🎉 Congratulations! You won!\n${formatBoard(current.board)}`, event.threadID);
 
       // Update score
-      const scores = loadScores();
       if(!scores[event.threadID]) scores[event.threadID]={};
-      if(!scores[event.threadID]["tictactoe"]) scores[event.threadID]["tictactoe"]={};
-      scores[event.threadID]["tictactoe"][event.senderName]=(scores[event.threadID]["tictactoe"][event.senderName]||0)+1;
+      if(!scores[event.threadID]["ttt"]) scores[event.threadID]["ttt"]={};
+      scores[event.threadID]["ttt"][event.senderName] = (scores[event.threadID]["ttt"][event.senderName]||0)+1;
       saveScores(scores);
 
       api.unsendMessage(current.messageID);
