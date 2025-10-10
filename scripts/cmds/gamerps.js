@@ -1,15 +1,15 @@
 const fs = require("fs");
 const path = require("path");
 
-const dataFile = path.join(__dirname, "gameScores.json");
-if (!fs.existsSync(dataFile)) fs.writeFileSync(dataFile, "{}");
+const dataFile = path.join(__dirname,"gameScores.json");
+if(!fs.existsSync(dataFile)) fs.writeFileSync(dataFile,"{}");
 
 function loadScores() {
   return JSON.parse(fs.readFileSync(dataFile));
 }
 
 function saveScores(scores) {
-  fs.writeFileSync(dataFile, JSON.stringify(scores, null, 2));
+  fs.writeFileSync(dataFile, JSON.stringify(scores,null,2));
 }
 
 const choices = ["rock","paper","scissors"];
@@ -22,7 +22,7 @@ module.exports = {
   config: {
     name: "rps",
     category: "fun",
-    description: "Play Rock Paper Scissors"
+    description: "Rock Paper Scissors Game"
   },
 
   onStart: async function({ api, event }) {
@@ -48,7 +48,7 @@ module.exports = {
   onReply: async function({ api, event, Reply }) {
     const key = event.threadID+"_rps";
     const current = global.GoatBot.games[key];
-    if(!current || event.messageReply.messageID !== current.messageID) return;
+    if(!current || event.messageReply?.messageID !== current.messageID) return;
     if(event.senderID !== current.playerID) return;
 
     const userChoice = (event.body||"").toLowerCase();
