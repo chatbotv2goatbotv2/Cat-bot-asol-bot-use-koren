@@ -22,65 +22,37 @@ module.exports = {
   config: {
     name: "rps",
     category: "fun",
-    description: "Rock Paper Scissors Game"
+    description: "Rock Paper Scissors Single-step Game",
+    guide: "/rps <rock/paper/scissors>"
   },
 
-  onStart: async function({ api, event }) {
+  onStart: async function({ api, event, args }) {
     const threadID = event.threadID;
+    const userChoice = (args[0]||"").toLowerCase();
 
-    const sentMsg = await api.sendMessage(
-      "✂️ Rock Paper Scissors!\nReply with rock, paper, or scissors",
-      threadID
-    );
-
-    if(!global.GoatBot.games) global.GoatBot.games={};
-    global.GoatBot.games[threadID+"_rps"] = {
-      messageID: sentMsg.messageID,
-      playerID: event.senderID,
-      timeout: setTimeout(()=>{
-        api.sendMessage("⏰ Time's up! Game over!", threadID);
-        api.unsendMessage(sentMsg.messageID);
-        delete global.GoatBot.games[threadID+"_rps"];
-      },2*60*1000)
-    };
-  },
-
-  onReply: async function({ api, event, Reply }) {
-    const key = event.threadID+"_rps";
-    const current = global.GoatBot.games[key];
-    if(!current || event.messageReply?.messageID !== current.messageID) return;
-    if(event.senderID !== current.playerID) return;
-
-    const userChoice = (event.body||"").toLowerCase();
-    if(!choices.includes(userChoice)) return api.sendMessage("❌ Invalid! Use rock, paper, or scissors", event.threadID);
+    if(!choices.includes(userChoice)) 
+      return api.sendMessage("❌ Use: /rps rock | paper | scissors", threadID);
 
     const botChoice = getBotChoice();
     let result="";
-    if(userChoice===botChoice) result="draw";
+    if(userChoice===botChoice) result="Draw";
     else if(
       (userChoice==="rock" && botChoice==="scissors") ||
       (userChoice==="paper" && botChoice==="rock") ||
       (userChoice==="scissors" && botChoice==="paper")
-    ) result="user";
-    else result="bot";
+    ) result="You Win!";
+    else result="Bot Wins!";
 
-    const user = event.senderName || "Unknown";
+    const msg = `✂️ You: ${userChoice}\n🤖 Bot: ${botChoice}\n🎯 Result: ${result}`;
+    api.sendMessage(msg, threadID);
+
+    // Update score
     const scores = loadScores();
-    if(!scores[event.threadID]) scores[event.threadID]={};
-    if(!scores[event.threadID]["rps"]) scores[event.threadID]["rps"]={};
+    if(!scores[threadID]) scores[threadID]={};
+    if(!scores[threadID]["rps"]) scores[threadID]["rps"]={};
+    const user = event.senderName || "Unknown";
 
-    if(result==="user"){
-      api.sendMessage(`🎉 Congratulations ${user}! You won!\nBot chose: ${botChoice}`, event.threadID);
-      scores[event.threadID]["rps"][user] = (scores[event.threadID]["rps"][user]||0)+1;
-    } else if(result==="bot"){
-      api.sendMessage(`💀 Bot won!\nBot chose: ${botChoice}`, event.threadID);
-    } else {
-      api.sendMessage(`🤝 Draw!\nBot chose: ${botChoice}`, event.threadID);
-    }
-
+    if(result==="You Win!") scores[threadID]["rps"][user] = (scores[threadID]["rps"][user]||0)+1;
     saveScores(scores);
-    clearTimeout(current.timeout);
-    api.unsendMessage(current.messageID);
-    delete global.GoatBot.games[key];
   }
 };
