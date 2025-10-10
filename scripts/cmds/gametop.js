@@ -1,7 +1,3 @@
-// gametop.js
-// Game leaderboard command for Messenger bot
-// Shows per-game scores + total scores
-
 const fs = require("fs");
 const path = require("path");
 
@@ -15,12 +11,8 @@ function loadScores() {
 module.exports = {
   config: {
     name: "gametop",
-    version: "1.0",
-    author: "Helal x GPT",
-    role: 0,
-    shortDescription: "Show leaderboard of all games",
     category: "fun",
-    guide: "{pn} gametop"
+    description: "Show leaderboard of all games"
   },
 
   onStart: async function({ api, event }) {
@@ -28,33 +20,33 @@ module.exports = {
     const scores = loadScores();
     const threadScores = scores[threadID] || {};
 
-    if (!Object.keys(threadScores).length)
+    if(!Object.keys(threadScores).length)
       return api.sendMessage("🏆 No game scores yet!", threadID);
 
-    let msg = "🏆 Game Leaderboard:\n\n";
+    let msg = "─────『 🏆 Game Leaderboard 🏆 』─────\n\n";
 
     // Per game leaderboard
     Object.keys(threadScores).forEach(game => {
-      msg += `${game.toUpperCase()}:\n`;
-      const sorted = Object.entries(threadScores[game]).sort((a, b) => b[1] - a[1]);
-      sorted.forEach(([user, score], i) => {
-        msg += `${i + 1}. ${user} — ${score}\n`;
+      msg += `💫 ${game.toUpperCase()}:\n`;
+      const sorted = Object.entries(threadScores[game]).sort((a,b)=>b[1]-a[1]);
+      sorted.forEach(([user, score], i)=>{
+        msg += `${i+1}. ${user} — ${score}\n`;
       });
       msg += "\n";
     });
 
     // Total scores
     let totalScores = {};
-    Object.values(threadScores).forEach(gameObj => {
-      Object.entries(gameObj).forEach(([user, score]) => {
-        totalScores[user] = (totalScores[user] || 0) + score;
+    Object.values(threadScores).forEach(gameObj=>{
+      Object.entries(gameObj).forEach(([user, score])=>{
+        totalScores[user] = (totalScores[user]||0)+score;
       });
     });
 
-    msg += "Total Scores:\n";
-    const sortedTotal = Object.entries(totalScores).sort((a, b) => b[1] - a[1]);
-    sortedTotal.forEach(([user, score], i) => {
-      msg += `${i + 1}. ${user} — ${score}\n`;
+    msg += "💎 Total Scores:\n";
+    const sortedTotal = Object.entries(totalScores).sort((a,b)=>b[1]-a[1]);
+    sortedTotal.forEach(([user, score], i)=>{
+      msg += `${i+1}. ${user} — ${score}\n`;
     });
 
     api.sendMessage(msg, threadID);
