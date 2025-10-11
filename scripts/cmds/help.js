@@ -5,10 +5,10 @@ module.exports = {
   config: {
     name: "help",
     aliases: ["menu"],
-    version: "6.5",
+    version: "7.0",
     author: "Helal",
-    description: "Shows all commands with clean style 🌺",
-    category: "system"
+    description: "Show all available commands 🌺",
+    category: "system",
   },
 
   onStart: async function ({ api, event }) {
@@ -18,6 +18,7 @@ module.exports = {
 
       let categories = {};
 
+      // auto detect all command files
       for (const file of files) {
         try {
           const cmd = require(path.join(cmdsPath, file));
@@ -28,22 +29,49 @@ module.exports = {
         } catch (e) {}
       }
 
-      let msg = "─────『 🌺 Cat Bot 🌺 』──────╮\n\n";
+      let msg = "╭─────『 🌺 𝐂𝐀𝐓 𝐁𝐎𝐓 𝐌𝐄𝐍𝐔 🌺 』─────╮\n\n";
+
+      // stylish category with emojis
+      const catEmojis = {
+        GAME: "🎮",
+        GROUP: "👥",
+        IMAGE: "🖼️",
+        SYSTEM: "🧠",
+        FUN: "🎭",
+        MUSIC: "🎵",
+        AI: "🤖",
+        QUIZ: "❓",
+        ADMIN: "👑",
+        ECONOMY: "💰",
+        ISLAMIC: "☪️",
+        TOOLS: "🧰",
+        MEDIA: "🎬",
+        WIKI: "📘",
+        UTILITY: "📌",
+        OTHER: "🪅"
+      };
 
       for (const category in categories) {
-        msg += `💫 ${category}\n`;
-        const list = categories[category]
-          .map(cmd => `🌺 ${cmd}`)
-          .join("\n");
-        msg += list + "\n\n";
+        const emoji = catEmojis[category] || "✨";
+        msg += `            ${emoji} ${category} ${emoji}\n`;
+        msg += categories[category].map(cmd => `🌺 ${cmd}`).join("\n") + "\n\n";
       }
 
-      msg += "╰─────────────────────💫";
+      msg += "╰─────────────────────────────💫\n";
 
-      api.sendMessage(msg, event.threadID);
+      // video link
+      const videoUrl = "https://i.imgur.com/1lNzAqy.mp4";
+
+      api.sendMessage(
+        {
+          body: msg,
+          attachment: await global.utils.getStreamFromURL(videoUrl),
+        },
+        event.threadID
+      );
     } catch (err) {
       console.error(err);
       api.sendMessage("❌ | Failed to load help list.", event.threadID);
     }
-  }
+  },
 };
