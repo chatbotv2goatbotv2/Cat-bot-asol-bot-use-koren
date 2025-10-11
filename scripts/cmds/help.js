@@ -4,74 +4,75 @@ const path = require("path");
 module.exports = {
   config: {
     name: "help",
-    aliases: ["menu"],
-    version: "7.0",
+    aliases: ["menu", "commands"],
+    version: "2.0",
     author: "Helal",
-    description: "Show all available commands 🌺",
+    countDown: 5,
+    role: 0,
+    shortDescription: "Show all available commands",
+    longDescription: "Display a categorized list of all available bot commands with a video.",
     category: "system",
+    guide: "{pn} or {pn} <command name>"
   },
 
-  onStart: async function ({ api, event }) {
-    try {
-      const cmdsPath = path.join(__dirname, "./");
-      const files = fs.readdirSync(cmdsPath).filter(file => file.endsWith(".js"));
+  onStart: async function ({ message, args }) {
+    const commandFolders = fs.readdirSync(path.join(__dirname, ".."));
+    let allCommands = [];
 
-      let categories = {};
+    for (const folder of commandFolders) {
+      const folderPath = path.join(__dirname, "..", folder);
+      if (!fs.statSync(folderPath).isDirectory()) continue;
 
-      // auto detect all command files
+      const files = fs.readdirSync(folderPath).filter(file => file.endsWith(".js"));
       for (const file of files) {
         try {
-          const cmd = require(path.join(cmdsPath, file));
-          const cat = cmd.config?.category?.toUpperCase() || "OTHER";
-          const name = cmd.config?.name || file.replace(".js", "");
-          if (!categories[cat]) categories[cat] = [];
-          categories[cat].push(name);
-        } catch (e) {}
+          const command = require(path.join(folderPath, file));
+          if (command.config?.name) {
+            allCommands.push({
+              name: command.config.name,
+              category: command.config.category || "Misc"
+            });
+          }
+        } catch (e) { }
       }
-
-      let msg = "╭─────『 🌺 𝐂𝐀𝐓 𝐁𝐎𝐓 𝐌𝐄𝐍𝐔 🌺 』─────╮\n\n";
-
-      // stylish category with emojis
-      const catEmojis = {
-        GAME: "🎮",
-        GROUP: "👥",
-        IMAGE: "🖼️",
-        SYSTEM: "🧠",
-        FUN: "🎭",
-        MUSIC: "🎵",
-        AI: "🤖",
-        QUIZ: "❓",
-        ADMIN: "👑",
-        ECONOMY: "💰",
-        ISLAMIC: "☪️",
-        TOOLS: "🧰",
-        MEDIA: "🎬",
-        WIKI: "📘",
-        UTILITY: "📌",
-        OTHER: "🪅"
-      };
-
-      for (const category in categories) {
-        const emoji = catEmojis[category] || "✨";
-        msg += `            ${emoji} ${category} ${emoji}\n`;
-        msg += categories[category].map(cmd => `🌺 ${cmd}`).join("\n") + "\n\n";
-      }
-
-      msg += "╰─────────────────────────────💫\n";
-
-      // video link
-      const videoUrl = "https://i.imgur.com/1lNzAqy.mp4";
-
-      api.sendMessage(
-        {
-          body: msg,
-          attachment: await global.utils.getStreamFromURL(videoUrl),
-        },
-        event.threadID
-      );
-    } catch (err) {
-      console.error(err);
-      api.sendMessage("❌ | Failed to load help list.", event.threadID);
     }
-  },
+
+    if (allCommands.length === 0)
+      return message.reply("❌ | Failed to load help list.");
+
+    // Categorize commands
+    const categories = {};
+    for (const cmd of allCommands) {
+      const category = cmd.category.toUpperCase();
+      if (!categories[category]) categories[category] = [];
+      categories[category].push(cmd.name);
+    }
+
+    // Emojis for each category
+    const categoryEmojis = {
+      GAME: "🎮",
+      GROUP: "👥",
+      IMAGE: "🖼️",
+      SYSTEM: "🧠",
+      FUN: "🎭",
+      ECONOMY: "💰",
+      ISLAMIC: "☪️",
+      UTILITY: "📌",
+      MISC: "✨"
+    };
+
+    let helpMessage = "╭─────『 🌺 𝐁𝐎𝐓 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒 🌺 』─────╮\n\n";
+    for (const [category, cmds] of Object.entries(categories)) {
+      const emoji = categoryEmojis[category] || "🌸";
+      helpMessage += `            ${emoji} ${category} ${emoji}\n`;
+      helpMessage += cmds.map(c => `🌺 ${c}`).join("\n") + "\n\n";
+    }
+    helpMessage += "╰─────────────────────────────💫";
+
+    // Send help message + video
+    await message.reply({
+      body: helpMessage,
+      attachment: await global.utils.getStreamFromURL("https://i.imgur.com/1lNzAqy.mp4")
+    });
+  }
 };
