@@ -40,7 +40,7 @@ module.exports = {
     // === If no argument: show command list ===
     if (args.length === 0) {
       const categories = {};
-      let msg = `╭──🥀BOT📌──╮\n│\n│   All Command\n│`;
+      let msg = `╭──BOT All command ──╮\n│\n│   All Command\n│`;
 
       // Group commands by category
       for (const [name, value] of commands) {
@@ -53,18 +53,18 @@ module.exports = {
       // Build message
       Object.keys(categories).forEach((category) => {
         if (category !== "info") {
-          msg += `\n│\n│ ╭─♦────♦───♦─\n│ │ 『 ${category.toUpperCase()} 』`;
+          msg += `\n│\n│\n│ │ 『 ${category.toUpperCase()} 』`;
           const names = categories[category].sort();
           for (let i = 0; i < names.length; i += 3) {
-            const cmds = names.slice(i, i + 3).map((item) => `✯${item}`);
+            const cmds = names.slice(i, i + 3).map((item) =>'→${item}`);
             msg += `\n│ │ ${cmds.join("  ")}`;
           }
-          msg += `\n│ ╰──★──✯──★──✯`;
+          msg += `\n│`;
         }
       });
 
       const totalCommands = commands.size;
-      msg += `\n│\n│ CONTACT FACEBOOK:\n│ https://www.facebook.com/profile.php?id=61568305950691\n│\n│ TOTAL COMMANDS: ${totalCommands}\n│\n│ ╰──────♦•♥•♦──────╯\n│ The end`;
+      msg += `\n│\n│  ╰──────♦•♥•♦──────╯\n│ The end`;
 
       // === Reply once with video ===
       return message.reply({
@@ -90,7 +90,7 @@ module.exports = {
 
     const response = `╭──Cat•Bot•Command──╮
 │
-│ ╭─♦─ CAT••BOT ──♦──♦
+│ ╭─♦─ NAME ──♦──♦
 │ │ ${configCommand.name}
 │ ├── INFO
 │ │ Description: ${longDescription}
@@ -98,9 +98,7 @@ module.exports = {
 │ │ Version: ${configCommand.version || "1.0"}
 │ │ Role: ${roleText}
 │ │ Time per command: ${configCommand.countDown || 1}s
-│ ╰━━♦━━━♥━━♦
-│
-╰────────────╯`;
+╰━━♦━━━♥━━♦`;
 
     return message.reply({
       body: response,
@@ -135,4 +133,4 @@ function downloadFile(url, dest) {
       reject(err);
     });
   });
-                                }
+            }
