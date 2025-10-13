@@ -1,72 +1,75 @@
-const fs = require("fs");
+const fs = require("fs-extra");
 const path = require("path");
+const https = require("https");
+const { getPrefix } = global.utils;
+const { commands } = global.GoatBot;
 
 module.exports = {
   config: {
     name: "help",
     aliases: ["menu"],
-    version: "7.0",
+    version: "2.0",
     author: "Helal",
-    description: "Shows all commands with video and categories 🌺",
-    category: "system"
+    countDown: 10,
+    role: 0,
+    category: "system",
+    shortDescription: { en: "Shows all commands with video 🌺" },
   },
 
-  onStart: async function ({ api, event }) {
-    try {
-      // 📂 Command folder path
-      const cmdsPath = path.join(__dirname, "./");
-      const files = fs.readdirSync(cmdsPath).filter(f => f.endsWith(".js"));
+  onStart: async function ({ message, args, event }) {
+    const videoURL = "https://i.imgur.com/nGM34ds.mp4"; // তোমার video link
+    const cacheDir = path.join(__dirname, "cache");
+    const videoPath = path.join(cacheDir, "help_video.mp4");
+    if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-      // 🗂️ Create category list
-      let categories = {};
-      for (const file of files) {
-        try {
-          const cmd = require(path.join(cmdsPath, file));
-          const cat = cmd.config?.category?.toUpperCase() || "OTHER";
-          const name = cmd.config?.name || file.replace(".js", "");
-          if (!categories[cat]) categories[cat] = [];
-          categories[cat].push(name);
-        } catch (e) {}
-      }
+    // Cache video once
+    if (!fs.existsSync(videoPath)) await downloadFile(videoURL, videoPath);
 
-      // 🌸 Make message
-      let msg = "╭──〔 🌺 𝗕𝗢𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 🌺 〕──╮\n\n";
-
-      const emojiMap = {
-        SYSTEM: "⚙️",
-        GAME: "🎮",
-        QUIZ: "🧩",
-        IMAGE: "🖼️",
-        ADMIN: "👑",
-        SOCIAL: "💬",
-        MUSIC: "🎵",
-        AI: "🤖",
-        INFO: "📚",
-        UTILITY: "📌",
-        OTHER: "✨"
-      };
-
-      for (const cat in categories) {
-        const emoji = emojiMap[cat] || "🌺";
-        msg += `${emoji} ${cat}\n`;
-        msg += categories[cat].map(c => `   🌺 ${c}`).join("\n") + "\n\n";
-      }
-
-      msg += "╰──────────────────────────────╯\n🎬 Watch the demo video below ⬇️";
-
-      // 🎥 Video link (Imgur mp4)
-      const videoLink = "https://i.imgur.com/nGM34ds.mp4";
-
-      api.sendMessage(
-        {
-          body: msg,
-          attachment: await global.utils.getStreamFromURL(videoLink)
-        },
-        event.threadID
-      );
-    } catch (err) {
-      console.error(err);
-      api.sendMessage("❌ | Failed to load help list.", event.threadID);
+    const categories = {};
+    for (const [name, value] of commands) {
+      const category = value.config.category?.toUpperCase() || "OTHER";
+      if (!categories[category]) categories[category] = [];
+      categories[category].push(name);
     }
-  }
+
+    // Styled output
+    let msg = "🌺 ⌬⌬ 𝐂𝐚𝐭 𝐁𝐨𝐭 ⌬⌬ 🌺\n───────────────\n\n";
+
+    const emojiMap = {
+      GAME: "🎮 𝗚𝗔𝗠𝗘 🕹️",
+      SOCIAL: "💬 𝗦𝗢𝗖𝗜𝗔𝗟 💞",
+      SYSTEM: "⚙️ 𝗦𝗬𝗦𝗧𝗘𝗠 ⚡",
+      INFO: "📘 𝗜𝗡𝗙𝗢 📗",
+      OTHER: "🧩 𝗢𝗧𝗛𝗘𝗥 🎭",
+    };
+
+    for (const cat in categories) {
+      msg += `${emojiMap[cat] || cat}\n`;
+      categories[cat].forEach((cmd, i) => {
+        msg += `${i + 1}️⃣ ${cmd}\n`;
+      });
+      msg += "\n";
+    }
+
+    const totalCommands = commands.size;
+    msg += "───────────────\n";
+    msg += `🌸 Total Commands: ${totalCommands}\n🎬 Video Below 👇`;
+
+    return message.reply({
+      body: msg,
+      attachment: fs.createReadStream(videoPath),
+    });
+  },
 };
+
+// Download helper
+function downloadFile(url, dest) {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(dest);
+    https.get(url, (res) => {
+      if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`));
+      res.pipe(file);
+      file.on("finish", () => file.close(resolve));
+    }).on("error", reject);
+  });
+      }
