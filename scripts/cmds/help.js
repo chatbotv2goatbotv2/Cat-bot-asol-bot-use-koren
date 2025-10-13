@@ -1,136 +1,77 @@
-const fs = require("fs-extra");
+const fs = require("fs");
 const path = require("path");
-const https = require("https");
-const { getPrefix } = global.utils;
-const { commands, aliases } = global.GoatBot;
 
 module.exports = {
   config: {
     name: "help",
-    version: "1.19",
-    author: "HELAL",
-    countDown: 10,
-    role: 0,
-    shortDescription: { en: "View command usage and list all commands directly" },
-    longDescription: { en: "View command usage and list all commands directly" },
-    category: "info",
-    guide: { en: "{pn} / help cmdName" },
-    priority: 1,
+    aliases: ["menu", "commands"],
+    version: "5.0",
+    author: "Helal x GPT-5",
+    description: "Show all available commands with category and video",
+    category: "settings"
   },
 
-  onStart: async function ({ message, args, event, threadsData, role }) {
-    const { threadID } = event;
-    const prefix = getPrefix(threadID);
+  onStart: async function ({ api, event }) {
+    try {
+      const cmdsPath = path.join(__dirname, "./");
+      const files = fs.readdirSync(cmdsPath).filter(f => f.endsWith(".js"));
 
-    // === Video setup ===
-    const videoURL = "https://i.imgur.com/SeCKeXp.mp4"; // your fixed video link
-    const cacheDir = path.join(__dirname, "cache");
-    if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
-    const videoPath = path.join(cacheDir, "help_video.mp4");
+      let categories = {};
 
-    // Download video if not cached
-    if (!fs.existsSync(videoPath)) {
-      try {
-        await downloadFile(videoURL, videoPath);
-      } catch (e) {
-        console.error("Video download failed:", e);
-      }
-    }
-
-    // === If no argument: show command list ===
-    if (args.length === 0) {
-      const categories = {};
-      let msg = `╭──BOT All command ──╮\n│\n│   All Command\n│`;
-
-      // Group commands by category
-      for (const [name, value] of commands) {
-        if (value.config.role > 1 && role < value.config.role) continue;
-        const category = value.config.category || "Uncategorized";
-        if (!categories[category]) categories[category] = [];
-        categories[category].push(name);
+      for (const file of files) {
+        try {
+          const cmd = require(path.join(cmdsPath, file));
+          const cat = (cmd.config?.category || "OTHER").toUpperCase();
+          const name = cmd.config?.name || file.replace(".js", "");
+          if (!categories[cat]) categories[cat] = [];
+          categories[cat].push(name);
+        } catch (e) {}
       }
 
-      // Build message
-      Object.keys(categories).forEach((category) => {
-        if (category !== "info") {
-          msg += `\n│\n│\n│ │ 『 ${category.toUpperCase()} 』`;
-          const names = categories[category].sort();
-          for (let i = 0; i < names.length; i += 3) {
-            const cmds = names.slice(i, i + 3).map((item) =>'→${item}`);
-            msg += `\n│ │ ${cmds.join("  ")}`;
-          }
-          msg += `\n│`;
-        }
-      });
+      const catEmojis = {
+        SETTINGS: "⚙️",
+        GAME: "🎮",
+        FUN: "🎭",
+        IMAGE: "🖼️",
+        QUIZ: "🧩",
+        SOCIAL: "💬",
+        ADMIN: "👑",
+        TOOLS: "🧰",
+        MUSIC: "🎵",
+        AI: "🤖",
+        ANIME: "🌸",
+        ECONOMY: "💰",
+        INFO: "📚",
+        SEARCH: "🔍",
+        UTILITY: "🪄",
+        OTHER: "✨"
+      };
 
-      const totalCommands = commands.size;
-      msg += `\n│\n│  ╰──────♦•♥•♦──────╯\n│ The end`;
+      let msg = "╭──〔 🌺 𝗕𝗢𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 𝗠𝗘𝗡𝗨 🌺 〕──╮\n\n";
 
-      // === Reply once with video ===
-      return message.reply({
-        body: msg,
-        attachment: fs.existsSync(videoPath) ? fs.createReadStream(videoPath) : undefined
-      });
+      for (const cat in categories) {
+        const emoji = catEmojis[cat] || "✨";
+        msg += ` ${emoji} ${cat}\n`;
+        msg += categories[cat].map(n => `   🌺 ${n}`).join("\n");
+        msg += "\n\n";
+      }
+
+      msg += "╰──────────────────────────────╯\n";
+      msg += "🎬 Watch the demo video below ⬇️";
+
+      const videoUrl = "https://i.imgur.com/nGM34ds.mp4";
+
+      // Send help list + video
+      api.sendMessage(
+        {
+          body: msg,
+          attachment: await global.utils.getStreamFromURL(videoUrl)
+        },
+        event.threadID
+      );
+    } catch (err) {
+      console.error(err);
+      api.sendMessage("❌ | Failed to load help list.", event.threadID);
     }
-
-    // === If user asks for a specific command ===
-    const commandName = args[0].toLowerCase();
-    const command = commands.get(commandName) || commands.get(aliases.get(commandName));
-
-    if (!command) {
-      return message.reply(`❌ Command "${commandName}" not found.`);
-    }
-
-    const configCommand = command.config;
-    const roleText = roleTextToString(configCommand.role);
-    const author = configCommand.author || "Unknown";
-    const longDescription = configCommand.longDescription?.en || "No description";
-    const guideBody = configCommand.guide?.en || "No guide available.";
-    const usage = guideBody.replace(/{p}/g, prefix).replace(/{n}/g, configCommand.name);
-
-    const response = `╭──Cat•Bot•Command──╮
-│
-│ ╭─♦─ NAME ──♦──♦
-│ │ ${configCommand.name}
-│ ├── INFO
-│ │ Description: ${longDescription}
-│ │ Other names: ${configCommand.aliases ? configCommand.aliases.join(", ") : "Do not have"}
-│ │ Version: ${configCommand.version || "1.0"}
-│ │ Role: ${roleText}
-│ │ Time per command: ${configCommand.countDown || 1}s
-╰━━♦━━━♥━━♦`;
-
-    return message.reply({
-      body: response,
-      attachment: fs.existsSync(videoPath) ? fs.createReadStream(videoPath) : undefined
-    });
-  },
-};
-
-// === Role text helper ===
-function roleTextToString(roleText) {
-  switch (roleText) {
-    case 0: return "0 (All users)";
-    case 1: return "1 (Group administrators)";
-    case 2: return "2 (Admin bot)";
-    default: return "Unknown role";
   }
-}
-
-// === Download helper ===
-function downloadFile(url, dest) {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(dest);
-    https.get(url, (res) => {
-      if (res.statusCode !== 200) {
-        fs.unlink(dest, () => {});
-        return reject(new Error(`HTTP ${res.statusCode}`));
-      }
-      res.pipe(file);
-      file.on("finish", () => file.close(resolve));
-    }).on("error", (err) => {
-      fs.unlink(dest, () => {});
-      reject(err);
-    });
-  });
-            }
+};
