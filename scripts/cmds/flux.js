@@ -3,7 +3,7 @@ const fs = require("fs-extra");
 
 module.exports = {
   config: {
-    name: "flux",
+    name: "imagine",
     aliases: [],
     version: "5.0",
     author: "nexo_here",
