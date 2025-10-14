@@ -30,7 +30,7 @@ module.exports = {
     if (args[0] === "rules") {
       const rules =
         (await threadsData.get(threadID, "rules")) ||
-        "🌟 Welcome to our group!\n1️⃣ Be respectful.\n2️⃣ No spam.\n3️⃣ Respect admins.\n💫 Protected by Helal Islam Bot";
+        "🤗 Welcome to our group!\n1️⃣ Be respectful you cannot use bad language.\n2️⃣ No spam.\n3️⃣ Respect admins.\n💫 Protected by Helal Islam Bot";
       return message.reply(`📜 | Group Rules:\n\n${rules}`);
     }
 
@@ -47,7 +47,7 @@ module.exports = {
     if (logMessageType === "log:subscribe") {
       const rules =
         (await threadsData.get(threadID, "rules")) ||
-        "🌟 Welcome to our group!\n1️⃣ Be respectful.\n2️⃣ No spam.\n3️⃣ Respect admins.\n💫 Protected by Helal Islam Bot";
+        "🤗 Welcome to our group!\n1️⃣ Be respectful You cannot use bad language..\n2️⃣ No spam.\n3️⃣ Respect admins.\n→ by Helal Islam Bot";
 
       try {
         const groupInfo = await api.getThreadInfo(threadID);
