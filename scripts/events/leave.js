@@ -1,45 +1,70 @@
+const { getTime, drive } = global.utils;
 const axios = require("axios");
 const fs = require("fs-extra");
 
 module.exports = {
-  config: {
-    name: "leave",
-    version: "2.0",
-    author: "Helal + GPT",
-    category: "events"
-  },
+	config: {
+		name: "leave",
+		version: "1.5",
+		author: "NTKhang + Helal Edit",
+		category: "events"
+	},
 
-  onStart: async ({ threadsData, message, event, api, usersData }) => {
-    if (event.logMessageType !== "log:unsubscribe") return;
+	langs: {
+		en: {
+			session1: "morning",
+			session2: "noon",
+			session3: "afternoon",
+			session4: "evening",
+			leaveType1: "left",
+			leaveType2: "was kicked from",
+			defaultLeaveMessage: "{userName} {type} the group"
+		}
+	},
 
-    const { threadID, logMessageData } = event;
-    const leftID = logMessageData.leftParticipantFbId;
+	onStart: async ({ threadsData, message, event, api, usersData, getLang }) => {
+		if (event.logMessageType !== "log:unsubscribe") return;
+		
+		const { threadID } = event;
+		const threadData = await threadsData.get(threadID);
+		if (!threadData?.settings?.sendLeaveMessage) return;
 
-    // Bot নিজে leave করলে কিছু না পাঠাবে
-    if (leftID === api.getCurrentUserID()) return;
+		const { leftParticipantFbId } = event.logMessageData;
+		if (leftParticipantFbId == api.getCurrentUserID()) return;
 
-    try {
-      // ইউজারের নাম বের করা
-      const userName = await usersData.getName(leftID);
+		const hours = getTime("HH");
+		const threadName = threadData.threadName;
+		const userName = await usersData.getName(leftParticipantFbId);
 
-      // ভিডিও URL
-      const videoUrl = "https://i.imgur.com/KwXubhi.mp4";
-      const filePath = __dirname + "/cache/leave.mp4";
+		let { leaveMessage = getLang("defaultLeaveMessage") } = threadData.data;
+		leaveMessage = leaveMessage
+			.replace(/\{userName\}|\{userNameTag\}/g, userName)
+			.replace(/\{type\}/g, leftParticipantFbId == event.author ? getLang("leaveType1") : getLang("leaveType2"))
+			.replace(/\{threadName\}|\{boxName\}/g, threadName)
+			.replace(/\{time\}/g, hours)
+			.replace(/\{session\}/g,
+				hours <= 10 ? getLang("session1") :
+				hours <= 12 ? getLang("session2") :
+				hours <= 18 ? getLang("session3") : getLang("session4")
+			);
 
-      // ভিডিও ডাউনলোড
-      const videoBuffer = (await axios.get(videoUrl, { responseType: "arraybuffer" })).data;
-      fs.writeFileSync(filePath, Buffer.from(videoBuffer, "binary"));
+		try {
+			// 🎬 ভিডিও ডাউনলোড
+			const videoUrl = "https://i.imgur.com/KwXubhi.mp4";
+			const videoPath = __dirname + "/cache/leaveVideo.mp4";
 
-      // মেসেজ তৈরি ও পাঠানো
-      await message.send({
-        body: `${userName} left the group`,
-        attachment: fs.createReadStream(filePath)
-      });
+			const buffer = (await axios.get(videoUrl, { responseType: "arraybuffer" })).data;
+			fs.writeFileSync(videoPath, Buffer.from(buffer, "binary"));
 
-      // Cache file মুছে ফেলা
-      fs.unlinkSync(filePath);
-    } catch (err) {
-      console.error("❌ Leave Event Error:", err);
-    }
-  }
+			// 📤 পাঠানো
+			await message.send({
+				body: `${userName} left the group 😔`,
+				attachment: fs.createReadStream(videoPath)
+			}, threadID);
+
+			fs.unlinkSync(videoPath);
+		} catch (e) {
+			console.error("❌ Leave video error:", e);
+		}
+	}
 };
