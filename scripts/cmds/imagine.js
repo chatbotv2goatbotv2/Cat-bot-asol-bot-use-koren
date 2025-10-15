@@ -5,11 +5,11 @@ const path = require("path");
 module.exports = {
   config: {
     name: "imagine",
-    version: "4.0",
+    version: "5.2",
     author: "Helal + GPT-5",
     role: 0,
-    shortDescription: "Generate 4 AI design variations from one prompt",
-    longDescription: "Creates 4 unique design versions (different angles, colors, layouts) from a single prompt — like Bing Image Creator.",
+    shortDescription: "Generate 4 unique AI design versions",
+    longDescription: "Creates 4 AI variations like Bing Image Generator — different styles, lighting, and moods.",
     category: "AI-IMAGE",
     guide: {
       en: "{pn} <prompt>\n\nExample:\n{pn} Make a gaming logo"
@@ -17,46 +17,44 @@ module.exports = {
   },
 
   onStart: async function ({ message, args }) {
-    if (!args[0]) return message.reply("❗ Please provide a prompt.\n\nExample:\n/imagine Make a gaming logo");
+    if (!args[0]) return message.reply("❗ Please provide a prompt.\n\nExample:\n/imagine futuristic warrior logo");
 
     const prompt = args.join(" ");
     const cacheDir = path.join(__dirname, "cache");
     if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-    message.reply(`🎨 Generating 4 design variations for:\n"${prompt}"\nPlease wait 10–20 seconds...`);
+    const variations = [
+      `${prompt}, modern minimalist style, flat vector, clean geometric design`,
+      `${prompt}, 3D rendered, neon lights, glowing edges, futuristic vibe`,
+      `${prompt}, detailed digital painting, fantasy theme, soft lighting`,
+      `${prompt}, cyberpunk style, dark tone, neon highlights, cinematic`
+    ];
+
+    message.reply(`🎨 Creating 4 AI image variations for:\n"${prompt}"\nPlease wait 10–25 seconds...`);
 
     try {
-      // চারটা আলাদা version prompt বানানো হচ্ছে
-      const variations = [
-        `${prompt}, professional modern design, high contrast, HD, centered composition`,
-        `${prompt}, minimal logo style, flat color, clean layout, geometric shapes`,
-        `${prompt}, vibrant gaming style, neon light, detailed, 3D logo look`,
-        `${prompt}, futuristic tech vibe, metallic texture, sharp edges, dynamic motion`
-      ];
-
+      // Using new StableDiffusion API (Free mirror)
       const imagePromises = variations.map(async (v, i) => {
-        const apiUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(v)}`;
-        const filePath = path.join(cacheDir, `imagine_${Date.now()}_${i}.jpg`);
-        const response = await axios.get(apiUrl, { responseType: "arraybuffer" });
-        fs.writeFileSync(filePath, response.data);
+        const apiUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(v)}?width=512&height=512&n=1`;
+        const filePath = path.join(cacheDir, `ai_${Date.now()}_${i}.jpg`);
+        const res = await axios.get(apiUrl, { responseType: "arraybuffer" });
+        fs.writeFileSync(filePath, res.data);
         return fs.createReadStream(filePath);
       });
 
-      const images = await Promise.all(imagePromises);
+      const files = await Promise.all(imagePromises);
 
       await message.reply({
-        body: `✅ Generated 4 AI versions for:\n🎯 "${prompt}"`,
-        attachment: images
+        body: `✅ 4 designs generated for:\n🎯 ${prompt}`,
+        attachment: files
       });
 
-      // Cleanup
-      setTimeout(() => {
-        fs.emptyDirSync(cacheDir);
-      }, 10000);
+      // Clean cache
+      setTimeout(() => fs.emptyDirSync(cacheDir), 15000);
 
     } catch (err) {
-      console.error(err);
-      return message.reply("❌ Failed to generate images. Try again later.");
+      console.error("Error in imagine command:", err.message);
+      return message.reply("❌ Failed to generate images. Please try again later.");
     }
   }
 };
