@@ -3,7 +3,7 @@ const axios = require("axios");
 module.exports = {
   config: {
     name: "server",
-    aliases: ["mcstatus", "minecraft"],
+    aliases: ["mc", "status"],
     version: "4.0",
     author: "Helal Islam",
     shortDescription: "Check Minecraft server status with progress animation.",
