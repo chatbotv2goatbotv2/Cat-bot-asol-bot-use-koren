@@ -1,59 +1,45 @@
-const fs = require("fs");
-const path = require("path");
+const axios = require("axios");
+const fs = require("fs-extra");
 
 module.exports = {
   config: {
     name: "leave",
     version: "2.0",
-    author: "Helal Islam",
+    author: "Helal + GPT",
     category: "events"
   },
 
-  onStart: async function ({ api, event }) {
+  onStart: async ({ threadsData, message, event, api, usersData }) => {
     if (event.logMessageType !== "log:unsubscribe") return;
 
-    const { leftParticipantFbId } = event.logMessageData;
-    const botID = api.getCurrentUserID();
+    const { threadID, logMessageData } = event;
+    const leftID = logMessageData.leftParticipantFbId;
 
-    // যদি নিজে group থেকে বের হয়, কিছু পাঠাবে না
-    if (leftParticipantFbId === botID) return;
+    // Bot নিজে leave করলে কিছু না পাঠাবে
+    if (leftID === api.getCurrentUserID()) return;
 
     try {
-      const userInfo = await api.getUserInfo(leftParticipantFbId);
-      const userName = userInfo[leftParticipantFbId].name;
+      // ইউজারের নাম বের করা
+      const userName = await usersData.getName(leftID);
 
-      // Funny leave message list 😆
-      const messages = [
-        `😢 ${userName} ran away from the group!`,
-        `😂 ${userName} just rage-quit! GG!`,
-        `😎 ${userName} decided to go solo adventure!`,
-        `🕊️ ${userName} has left the building... forever maybe!`
-      ];
+      // ভিডিও URL
+      const videoUrl = "https://i.imgur.com/KwXubhi.mp4";
+      const filePath = __dirname + "/cache/leave.mp4";
 
-      // Random message choose করবে
-      const finalMessage = messages[Math.floor(Math.random() * messages.length)];
+      // ভিডিও ডাউনলোড
+      const videoBuffer = (await axios.get(videoUrl, { responseType: "arraybuffer" })).data;
+      fs.writeFileSync(filePath, Buffer.from(videoBuffer, "binary"));
 
-      // Local video path
-      const videoPath = path.join(__dirname, "cache", "leave.mp4");
+      // মেসেজ তৈরি ও পাঠানো
+      await message.send({
+        body: `${userName} left the group`,
+        attachment: fs.createReadStream(filePath)
+      });
 
-      // Video download না থাকলে link থেকে নেবে
-      const videoURL = "https://i.imgur.com/KwXubhi.mp4";
-
-      // Download video if not exists
-      if (!fs.existsSync(videoPath)) {
-        const axios = require("axios");
-        const response = await axios.get(videoURL, { responseType: "arraybuffer" });
-        fs.writeFileSync(videoPath, Buffer.from(response.data, "binary"));
-      }
-
-      // Send message + video
-      api.sendMessage({
-        body: finalMessage,
-        attachment: fs.createReadStream(videoPath)
-      }, event.threadID);
-
-    } catch (error) {
-      console.error("Leave event error:", error);
+      // Cache file মুছে ফেলা
+      fs.unlinkSync(filePath);
+    } catch (err) {
+      console.error("❌ Leave Event Error:", err);
     }
   }
 };
