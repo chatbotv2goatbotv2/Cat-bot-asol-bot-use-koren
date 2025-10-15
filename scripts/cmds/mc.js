@@ -4,50 +4,69 @@ module.exports = {
   config: {
     name: "mc",
     aliases: ["mcstatus", "minecraft"],
-    version: "1.1",
+    version: "3.5",
     author: "Helal Islam",
-    shortDescription: "Check Minecraft server status in fancy style.",
-    longDescription: "Fetches full Minecraft server info with stylish emoji header/footer.",
+    shortDescription: "Auto detect Java, Bedrock & Geyser servers.",
+    longDescription: "Detects if a Minecraft server is Java, Bedrock, or Geyser hybrid and shows player & version info.",
     category: "🎮 GAME",
-    guide: "{pn}mc <IP> [PORT]"
+    guide: "{pn}mc <server-ip> [port]"
   },
 
   onStart: async function ({ message, args, prefix }) {
-    if (!args[0]) return message.reply(`❌ Please provide the server IP.\n\n📌 Example:\n${prefix}mc play.hypixel.net 25565`);
+    if (!args[0])
+      return message.reply(`❌ Please provide the server IP.\n\n📌 Example:\n${prefix}mc play.hypixel.net`);
 
     const ip = args[0];
     const port = args[1] || 25565;
 
-    message.reply(`⏳ Checking Minecraft server status for 🌐 ${ip}:${port} ...`);
+    message.reply(`🕹️ Checking Minecraft server 🌍 ${ip}:${port} ...`);
 
     try {
-      const res = await axios.get(`https://api.mcsrvstat.us/2/${ip}:${port}`);
-      const data = res.data;
+      // Try Java first
+      const javaRes = await axios.get(`https://api.mcsrvstat.us/2/${ip}:${port}`);
+      const j = javaRes.data;
 
-      if (!data || !data.online) {
-        return message.reply(`❌ Server 🌐 ${ip}:${port} is offline or unreachable.`);
+      if (j && j.online) {
+        let serverType = "Java Edition";
+
+        // Check if Geyser or Floodgate keywords exist
+        const motdText = (j.motd?.clean?.join(" ") || "").toLowerCase();
+        if (motdText.includes("geyser") || motdText.includes("floodgate")) {
+          serverType = "Java + Bedrock (Geyser Supported)";
+        }
+
+        return message.reply(
+          `🌍 ───[ ${serverType.toUpperCase()} ]───
+━━━━━━━━━━━━━━━━━━━
+👥 Players: ${j.players.online} / ${j.players.max}
+⚙️ Version: ${j.version || "Unknown"}
+🌐 IP: ${j.hostname || ip}
+📜 MOTD: ${j.motd?.clean?.join(" ") || "N/A"}
+━━━━━━━━━━━━━━━━━━━
+🟢 Server is ONLINE and running perfectly!`
+        );
       }
 
-      let replyMsg = `🌌 𝗠𝗜𝗡𝗘𝗖𝗥𝗔𝗙𝗧 𝗦𝗧𝗔𝗧𝗨𝗦 🌌\n━━━━━━━━━━━━━━━━\n`;
-      replyMsg += `│ 🌐 Server: ${data.hostname || ip}\n`;
-      replyMsg += `│ 🖥️ IP: ${data.ip || ip}\n`;
-      replyMsg += `│ 🔌 Port: ${data.port || port}\n`;
-      replyMsg += `│ 👥 Online: ${data.players.online} / ${data.players.max}\n`;
-      replyMsg += `│ 🛠️ Version: ${data.version}\n`;
-      replyMsg += `│ 💬 MOTD: ${data.motd?.clean?.join(" ") || "N/A"}\n`;
-      replyMsg += `│ 🖧 Software: ${data.software || "Unknown"}\n`;
-      replyMsg += `│ 📡 Protocol: ${data.protocol || "N/A"}\n`;
-      replyMsg += `━━━━━━━━━━━━━━━━\n`;
-      replyMsg += `👑 Developed by: Helal Islam\n`;
-      replyMsg += `🚀 Powered by: Digital AI System\n`;
-      replyMsg += `Prefix: ${prefix} | Version: 1.1\n`;
-      replyMsg += `━━━━━━━━━━━━━━━━`;
+      // Try Bedrock API if Java failed
+      const bedrockRes = await axios.get(`https://api.mcstatus.io/v2/status/bedrock/${ip}:${port}`);
+      const b = bedrockRes.data;
 
-      return message.reply(replyMsg);
+      if (b && b.online) {
+        return message.reply(
+          `💎 ───[ BEDROCK SERVER STATUS ]───
+━━━━━━━━━━━━━━━━━━━
+👥 Players: ${b.players.online} / ${b.players.max}
+⚙️ Version: ${b.version.name || "Unknown"}
+🌐 IP: ${b.host}:${b.port}
+━━━━━━━━━━━━━━━━━━━
+🟢 Server is ONLINE and running smoothly!`
+        );
+      }
 
+      return message.reply(`🔴 Server ${ip}:${port} seems OFFLINE or unreachable.`);
     } catch (err) {
       console.error(err);
-      return message.reply("❌ Error fetching server info. Make sure the IP/Port is correct.");
+      return message.reply("❌ Error fetching server info. Please check IP/Port.");
     }
   }
 };
