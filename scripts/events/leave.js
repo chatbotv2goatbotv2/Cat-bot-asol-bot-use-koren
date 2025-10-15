@@ -1,98 +1,46 @@
-const { getTime, drive } = global.utils;
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 
 module.exports = {
-	config: {
-		name: "leave",
-		version: "1.4",
-		author: "NTKhang",
-		category: "events"
-	},
+  config: {
+    name: "funnyleave",
+    eventType: ["log:unsubscribe"],
+    version: "1.1",
+    author: "Helal",
+    category: "🎭 FUN",
+  },
 
-	langs: {
-		vi: {
-			session1: "sáng",
-			session2: "trưa",
-			session3: "chiều",
-			session4: "tối",
-			leaveType1: "tự rời",
-			leaveType2: "bị kick",
-			defaultLeaveMessage: "{userName} đã {type} khỏi nhóm"
-		},
-		en: {
-			session1: "morning",
-			session2: "noon",
-			session3: "afternoon",
-			session4: "evening",
-			leaveType1: "left",
-			leaveType2: "was kicked from",
-			defaultLeaveMessage: "{userName} {type} the group"
-		}
-	},
+  onStart: async function ({ event, api }) {
+    try {
+      const leftUser = event.logMessageData.leftParticipantFbId;
+      const userInfo = await api.getUserInfo(leftUser);
+      const name = userInfo[leftUser]?.name || "Someone";
 
-	onStart: async ({ threadsData, message, event, api, usersData, getLang }) => {
-		if (event.logMessageType == "log:unsubscribe")
-			return async function () {
-				const { threadID } = event;
-				const threadData = await threadsData.get(threadID);
-				if (!threadData.settings.sendLeaveMessage)
-					return;
-				const { leftParticipantFbId } = event.logMessageData;
-				if (leftParticipantFbId == api.getCurrentUserID())
-					return;
-				const hours = getTime("HH");
+      // Funny messages (random)
+      const funnyTexts = [
+        `🤣 ${name} just rage quit!`,
+        `💨 ${name} escaped the chaos!`,
+        `😂 ${name} couldn’t handle the vibes!`,
+        `👀 ${name} left without saying bye!`,
+        `😏 ${name} said: “I’m outta here!”`,
+      ];
+      const text = funnyTexts[Math.floor(Math.random() * funnyTexts.length)];
 
-				const threadName = threadData.threadName;
-				const userName = await usersData.getName(leftParticipantFbId);
+      // Download the video from Imgur
+      const videoUrl = "https://i.imgur.com/KwXubhi.mp4";
+      const videoPath = path.join(__dirname, "funnyleave.mp4");
+      const response = await axios.get(videoUrl, { responseType: "arraybuffer" });
+      fs.writeFileSync(videoPath, Buffer.from(response.data));
 
-				// {userName}   : name of the user who left the group
-				// {type}       : type of the message (leave)
-				// {boxName}    : name of the box
-				// {threadName} : name of the box
-				// {time}       : time
-				// {session}    : session
-
-				let { leaveMessage = getLang("defaultLeaveMessage") } = threadData.data;
-				const form = {
-					mentions: leaveMessage.match(/\{userNameTag\}/g) ? [{
-						tag: userName,
-						id: leftParticipantFbId
-					}] : null
-				};
-
-				leaveMessage = leaveMessage
-					.replace(/\{userName\}|\{userNameTag\}/g, userName)
-					.replace(/\{type\}/g, leftParticipantFbId == event.author ? getLang("leaveType1") : getLang("leaveType2"))
-					.replace(/\{threadName\}|\{boxName\}/g, threadName)
-					.replace(/\{time\}/g, hours)
-					.replace(/\{session\}/g, hours <= 10 ?
-						getLang("session1") :
-						hours <= 12 ?
-							getLang("session2") :
-							hours <= 18 ?
-								getLang("session3") :
-								getLang("session4")
-					);
-
-				form.body = leaveMessage;
-
-				if (leaveMessage.includes("{userNameTag}")) {
-					form.mentions = [{
-						id: leftParticipantFbId,
-						tag: userName
-					}];
-				}
-
-				if (threadData.data.leaveAttachment) {
-					const files = threadData.data.leaveAttachment;
-					const attachments = files.reduce((acc, file) => {
-						acc.push(drive.getFile(file, "stream"));
-						return acc;
-					}, []);
-					form.attachment = (await Promise.allSettled(attachments))
-						.filter(({ status }) => status == "fulfilled")
-						.map(({ value }) => value);
-				}
-				message.send(form);
-			};
-	}
+      // Send funny message + video
+      api.sendMessage(
+        { body: text, attachment: fs.createReadStream(videoPath) },
+        event.threadID,
+        () => fs.unlinkSync(videoPath) // delete after sending
+      );
+    } catch (e) {
+      console.error("Funny Leave Error:", e);
+    }
+  },
 };
