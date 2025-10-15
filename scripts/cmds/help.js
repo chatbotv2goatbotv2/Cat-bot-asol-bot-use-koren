@@ -17,7 +17,7 @@ module.exports = {
   },
 
   onStart: async function ({ message, args, event }) {
-    const videoURL = "https://i.imgur.com/nGM34ds.mp4"; // তোমার video link
+    const videoURL = "https://i.imgur.com/akgGYhE.mp4"; // তোমার video link
     const cacheDir = path.join(__dirname, "cache");
     const videoPath = path.join(cacheDir, "help_video.mp4");
     if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
