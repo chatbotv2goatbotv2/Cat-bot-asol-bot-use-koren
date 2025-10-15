@@ -2,7 +2,7 @@ const axios = require("axios");
 
 module.exports = {
   config: {
-    name: "mc",
+    name: "server",
     aliases: ["mcstatus", "minecraft"],
     version: "4.0",
     author: "Helal Islam",
