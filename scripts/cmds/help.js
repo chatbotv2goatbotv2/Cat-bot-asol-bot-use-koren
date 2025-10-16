@@ -1,68 +1,99 @@
 const fs = require("fs-extra");
 const path = require("path");
 const https = require("https");
-const { getPrefix } = global.utils;
 const { commands } = global.GoatBot;
 
 module.exports = {
   config: {
     name: "help",
     aliases: ["menu"],
-    version: "2.0",
-    author: "Helal",
+    version: "4.0",
+    author: "Helal + GPT-5",
     countDown: 10,
     role: 0,
     category: "system",
-    shortDescription: { en: "Shows all commands with video 🌺" },
+    shortDescription: { en: "Show all bot commands with categories + video" },
   },
 
-  onStart: async function ({ message, args, event }) {
-    const videoURL = "https://i.imgur.com/akgGYhE.mp4"; // তোমার video link
+  onStart: async function ({ message }) {
+    const videoURL = "https://i.imgur.com/gvUtwsv.mp4";
     const cacheDir = path.join(__dirname, "cache");
     const videoPath = path.join(cacheDir, "help_video.mp4");
     if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
-
-    // Cache video once
     if (!fs.existsSync(videoPath)) await downloadFile(videoURL, videoPath);
+
+    const emojiMap = {
+      TEXT: "✨『 TEXT 』",
+      TOOLS: "🧰『 TOOLS 』",
+      UTILITY: "🧩『 UTILITY 』",
+      WIKI: "📚『 WIKI 』",
+      GAME: "🎮『 GAME 』",
+      SYSTEM: "⚙️『 SYSTEM 』",
+      INFO: "📘『 INFO 』",
+      IMAGE: "🖼️『 IMAGE 』",
+      OWNER: "👑『 OWNER 』",
+      OTHER: "📦『 OTHER 』",
+      ADMIN: "🛠️『 ADMIN 』",
+      MUSIC: "🎵『 MUSIC 』",
+      AI: "🤖『 AI 』",
+      "AI-IMAGE": "🧠『 AI-IMAGE 』",
+      YOUTUBE: "📺『 YOUTUBE 』",
+      GOOGLE: "🌍『 GOOGLE 』",
+      ECONOMY: "💰『 ECONOMY 』",
+      SOCIAL: "💬『 SOCIAL 』",
+      WEATHER: "🌦️『 WEATHER 』",
+      ISLAMIC: "🕌『 ISLAMIC 』",
+      CONFIG: "⚙️『 CONFIG 』",
+      CONTACT: "☎️『 CONTACTS 』",
+      IDEA: "💡『 IDEA 』",
+      CHAT: "💭『 CHAT 』",
+      FUN: "🎉『 FUN 』",
+      MEDIA: "🖥️『 MEDIA 』",
+      VIDEO: "🎬『 VIDEO 』",
+      SECURITY: "🔒『 SECURITY 』",
+      SERVER: "🖧『 SERVER 』",
+      EDUCATION: "🎓『 EDUCATION 』",
+      ROLEPLAY: "🎭『 ROLEPLAY 』",
+      STICKER: "🏷️『 STICKER 』",
+      MEME: "😂『 MEME 』",
+      LOVE: "💖『 LOVE 』",
+      MODERATION: "🚨『 MODERATION 』",
+      RANK: "📈『 RANK 』",
+      ANIME: "🌸『 ANIME 』",
+      BOT: "🤖『 BOT 』",
+      SUPPORT: "🧩『 SUPPORT 』",
+      NSFW: "🚫『 NSFW 』",
+      DEVELOPER: "💻『 DEVELOPER 』",
+      DATABASE: "🗃️『 DATABASE 』"
+    };
 
     const categories = {};
     for (const [name, value] of commands) {
-      const category = value.config.category?.toUpperCase() || "OTHER";
-      if (!categories[category]) categories[category] = [];
-      categories[category].push(name);
+      const cat = value.config.category?.toUpperCase() || "OTHER";
+      if (!categories[cat]) categories[cat] = [];
+      categories[cat].push(name);
     }
 
-    // Styled output
-    let msg = "🌺 ⌬⌬ 𝐂𝐚𝐭 𝐁𝐨𝐭 ⌬⌬ 🌺\n───────────────\n\n";
+    let msg = "🌺 ⌬⌬ 𝐂𝐚𝐭 𝐁𝐨𝐭 𝐂𝐨𝐦𝐦𝐚𝐧𝐝𝐬 ⌬⌬ 🌺\n________________________\n\n";
 
-    const emojiMap = {
-      GAME: "🎮 𝗚𝗔𝗠𝗘",
-      SOCIAL: "📷 𝗦𝗢𝗖𝗜𝗔𝗟",
-      SYSTEM: "⚙️ 𝗦𝗬𝗦𝗧𝗘𝗠",
-      INFO: "📘 𝗜𝗡𝗙𝗢 ",
-      OTHER: "🧩 𝗢𝗧𝗛𝗘𝗥",
-    };
-
-    for (const cat in categories) {
-      msg += `${emojiMap[cat] || cat}\n`;
-      categories[cat].forEach((cmd, i) => {
-        msg += `${i + 1}️⃣ ${cmd}\n`;
-      });
-      msg += "\n";
+    for (const cat in emojiMap) {
+      if (categories[cat]) {
+        msg += `${emojiMap[cat]}\n`;
+        msg += categories[cat].map(cmd => `⚡ ${cmd}`).join("\n");
+        msg += "\n________________________\n\n";
+      }
     }
 
-    const totalCommands = commands.size;
-    msg += "───────────────\n";
-    msg += `🌸 Total Commands: ${totalCommands}\n🎬 Do you love💖`;
+    msg += "🤖 Cat Bot is always ready to help you!\n";
 
     return message.reply({
       body: msg,
-      attachment: fs.createReadStream(videoPath),
+      attachment: fs.createReadStream(videoPath)
     });
-  },
+  }
 };
 
-// Download helper
+// helper for caching video
 function downloadFile(url, dest) {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);
@@ -72,4 +103,4 @@ function downloadFile(url, dest) {
       file.on("finish", () => file.close(resolve));
     }).on("error", reject);
   });
-  }
+        }
