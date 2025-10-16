@@ -12,7 +12,7 @@
   "antiInbox": false,
   "language": "en",
   "notesLanguage": "change to your language with ISO 639-1 code, available languages: vi (Vietnamese), en (English)",
-  "nickNameBot": "Cat Bot",
+  "nickNameBot": "𝐂𝐚𝐭 𝐁𝐨𝐭",
   "prefix": "/",
   "adminOnly": {
     "enable": false,
@@ -20,7 +20,7 @@
   },
   "adminBot": [
     "61580156099497",
-    "61579763841166"
+    "61582463874623"
   ],
   "whiteListMode": {
     "enable": false,
