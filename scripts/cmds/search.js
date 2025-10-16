@@ -1,69 +1,50 @@
 const axios = require("axios");
 
-let recentResults = {};
-
 module.exports = {
   config: {
     name: "search",
-    version: "4.3",
-    author: "Helal",
-    category: "media",
+    version: "2.0",
+    author: "Helal + GPT-5",
     role: 0,
     shortDescription: "Search YouTube videos",
-    longDescription: "Search YouTube and reply with a number to get only the video link.",
-    guide: {
-      en: "{pn} <query>\nExample: /search Minecraft funny moments"
-    }
+    longDescription: "Find top YouTube videos and get direct video links by replying with the number.",
+    category: "MEDIA",
+    guide: "{pn} <keywords>"
   },
 
-  onStart: async function ({ message, args, event }) {
+  onStart: async function ({ message, args, commandName }) {
+    if (!args[0]) return message.reply(`❗ Use like:\n/${commandName} minecraft songs`);
     const query = args.join(" ");
-    if (!query)
-      return message.reply("❗ Please enter a search term.\nExample: /search Minecraft funny moments");
-
-    const api = `https://yt-api.eu.org/api/search?query=${encodeURIComponent(query)}`;
+    message.reply(`🔎 Searching YouTube for: "${query}" ...`);
 
     try {
-      message.reply(`🔍 Searching YouTube for: "${query}" ...`);
+      const res = await axios.get(`https://yt-search.vercel.app/search?query=${encodeURIComponent(query)}`);
+      const results = res.data.videos.slice(0, 8);
 
-      const res = await axios.get(api);
-      const data = res.data.data;
+      if (!results || results.length === 0) {
+        return message.reply("❌ No results found. Try another keyword.");
+      }
 
-      if (!data || data.length === 0)
-        return message.reply("❌ No results found!");
-
-      const results = data.slice(0, 10);
-      recentResults[event.threadID] = results;
-
-      let msg = results
-        .map(
-          (v, i) =>
-            `${i + 1}. 🎬 ${v.title}\n👤 ${v.channelTitle}\n⏱️ ${v.lengthText}\n👁️ ${v.viewCount}\n`
-        )
-        .join("\n");
-
-      return message.reply({
-        body: `✅ YouTube results for: "${query}"\n\n${msg}\n💬 Reply with a number (1–10) to get the video link only.`
+      let replyText = `✅ YouTube results for: "${query}"\n\n`;
+      results.forEach((v, i) => {
+        replyText += `${i + 1}. 🎬 ${v.title}\n👤 ${v.author.name}\n⏱️ ${v.duration}\n👁️ ${v.views} views\n\n`;
       });
+      replyText += `💬 Reply with a number (1–${results.length}) to get the video link.`;
 
+      const msg = await message.reply(replyText);
+
+      // Wait for reply from same user
+      message.replyListener = async (event) => {
+        if (event.senderID !== message.senderID) return;
+        const num = parseInt(event.body);
+        if (isNaN(num) || num < 1 || num > results.length) return;
+
+        const link = results[num - 1].url;
+        message.reply(link); // ✅ Only pure link
+      };
     } catch (err) {
       console.error(err);
-      return message.reply("❌ Failed to search YouTube.");
+      message.reply("❌ Failed to search YouTube. Please try again later.");
     }
-  },
-
-  onReply: async function ({ message, event }) {
-    const results = recentResults[event.threadID];
-    if (!results) return;
-
-    const index = parseInt(event.body);
-    if (isNaN(index) || index < 1 || index > results.length)
-      return message.reply("❌ Invalid number! (1–10)");
-
-    const selected = results[index - 1];
-    delete recentResults[event.threadID];
-
-    // শুধু link পাঠাবে, অন্য কিছু না
-    return message.reply(selected.url);
   }
 };
