@@ -3,51 +3,49 @@ const axios = require("axios");
 module.exports = {
   config: {
     name: "search",
-    version: "5.0",
+    version: "6.0",
     author: "Helal + GPT-5",
     role: 0,
-    shortDescription: "Search YouTube videos (no API key needed)",
-    longDescription: "Find YouTube videos instantly and reply with number to get link.",
+    shortDescription: "Search YouTube videos (no key needed)",
+    longDescription: "Search YouTube instantly without API key — reply with number to get the video link.",
     category: "YouTube",
     guide: {
-      en: "{pn} <query>\nExample:\n{pn} Minecraft tutorial"
+      en: "{pn} <query>\nExample:\n{pn} Minecraft funny moments"
     }
   },
 
   onStart: async function ({ message, args, event }) {
-    if (!args[0]) return message.reply("❗ Please provide something to search.\nExample:\n/search Minecraft funny moments");
+    if (!args[0])
+      return message.reply("❗ Type something to search.\nExample:\n/search Minecraft tutorial");
 
     const query = args.join(" ");
-    message.reply(`🔍 Searching YouTube for: "${query}"...`);
+    await message.reply(`🔍 Searching YouTube for: "${query}" ...`);
 
     try {
-      // YouTube search without API key (scraping endpoint)
-      const res = await axios.get(`https://ytsearch-api.vercel.app/search?query=${encodeURIComponent(query)}`);
-      const results = res.data.videos?.slice(0, 8);
+      // free scraper (no api key)
+      const response = await axios.get(`https://yt-api.eu.org/api/search?q=${encodeURIComponent(query)}`);
+      const results = response.data?.data?.slice(0, 8);
 
-      if (!results || results.length === 0) {
+      if (!results || results.length === 0)
         return message.reply("❌ No results found.");
-      }
 
-      let text = `🔎 YouTube Search Results for: "${query}"\n\n`;
-      results.forEach((v, i) => {
-        text += `${i + 1}. ${v.title}\n`;
+      let msg = `🎬 YouTube Results for: "${query}"\n\n`;
+      results.forEach((video, index) => {
+        msg += `${index + 1}. ${video.title}\n`;
       });
-      text += `\n👉 Reply with the number (1-${results.length}) to get the link.`;
+      msg += `\n👉 Reply with a number (1-${results.length}) to get the link.`;
 
-      const msg = await message.reply(text);
+      const replyMsg = await message.reply(msg);
 
-      // Save reply session
-      global.GoatBot.onReply.set(msg.messageID, {
+      global.GoatBot.onReply.set(replyMsg.messageID, {
         commandName: "search",
         author: event.senderID,
-        messageID: msg.messageID,
+        messageID: replyMsg.messageID,
         results
       });
-
-    } catch (err) {
-      console.error(err);
-      message.reply("❌ Failed to fetch YouTube results. Try again later.");
+    } catch (e) {
+      console.error(e);
+      message.reply("❌ YouTube search failed. Try again later.");
     }
   },
 
@@ -55,11 +53,10 @@ module.exports = {
     if (event.senderID !== Reply.author) return;
     const choice = parseInt(event.body.trim());
     if (isNaN(choice) || choice < 1 || choice > Reply.results.length)
-      return api.sendMessage("❌ Invalid choice.", event.threadID);
+      return api.sendMessage("❌ Invalid number.", event.threadID);
 
     const video = Reply.results[choice - 1];
-    const videoLink = video.url || `https://www.youtube.com/watch?v=${video.videoId}`;
-
-    return api.sendMessage(videoLink, event.threadID, event.messageID);
+    const link = video.url || `https://www.youtube.com/watch?v=${video.videoId}`;
+    return api.sendMessage(link, event.threadID, event.messageID);
   }
 };
