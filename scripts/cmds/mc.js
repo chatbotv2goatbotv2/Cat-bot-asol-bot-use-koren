@@ -40,10 +40,9 @@ module.exports = {
 ━━━━━━━━━━━━━━━━━━━
 👥 Players: ${j.players.online} / ${j.players.max}
 ⚙️ Version: ${j.version || "Unknown"}
-🌐 IP: ${j.hostname || ip}
 📜 MOTD: ${j.motd?.clean?.join(" ") || "N/A"}
 ━━━━━━━━━━━━━━━━━━━
-🟢 Server is ONLINE and running perfectly!`
+Server is online ✅`
         );
       }
 
@@ -57,13 +56,12 @@ module.exports = {
 ━━━━━━━━━━━━━━━━━━━
 👥 Players: ${b.players.online} / ${b.players.max}
 ⚙️ Version: ${b.version.name || "Unknown"}
-🌐 IP: ${b.host}:${b.port}
 ━━━━━━━━━━━━━━━━━━━
-🟢 Server is ONLINE and running smoothly!`
+Server is online✅`
         );
       }
 
-      return message.reply(`🔴 Server ${ip}:${port} seems OFFLINE or unreachable.`);
+      return message.reply(`❌ Server ${ip}:${port} is offline.`);
     } catch (err) {
       console.error(err);
       return message.reply("❌ Error fetching server info. Please check IP/Port.");
