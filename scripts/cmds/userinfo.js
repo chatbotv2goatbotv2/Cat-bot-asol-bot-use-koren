@@ -3,7 +3,7 @@ module.exports = {
     name: "userinfo",
     aliases: ["ui"],
     version: "3.0",
-    author: "Helal + GPT-5",
+    author: "Helal",
     countDown: 5,
     role: 0,
     category: "utility",
@@ -42,7 +42,6 @@ module.exports = {
 🔠 Username: ${vanity}
 
 ━━━━━━━━━━━━━━━━━━━
-✨ *Powered by Helal × GPT-5*
 `;
 
       message.reply(msg);
