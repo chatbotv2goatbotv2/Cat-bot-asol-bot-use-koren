@@ -19,7 +19,7 @@ module.exports = {
     const ip = args[0];
     const port = args[1] || 25565;
 
-    message.reply(`🕹️ Checking Minecraft server 🌍 ${ip}:${port} ...`);
+    message.reply(`🕹️ Checking Minecraft server 🌍`);
 
     try {
       // Try Java first
@@ -36,11 +36,9 @@ module.exports = {
         }
 
         return message.reply(
-          `🌍 ───[ ${serverType.toUpperCase()} ]───
-━━━━━━━━━━━━━━━━━━━
+          `───[ ${serverType.toUpperCase()} ]──
 👥 Players: ${j.players.online} / ${j.players.max}
 ⚙️ Version: ${j.version || "Unknown"}
-📜 MOTD: ${j.motd?.clean?.join(" ") || "N/A"}
 ━━━━━━━━━━━━━━━━━━━
 Server is online ✅`
         );
@@ -52,8 +50,7 @@ Server is online ✅`
 
       if (b && b.online) {
         return message.reply(
-          `💎 ───[ BEDROCK SERVER STATUS ]───
-━━━━━━━━━━━━━━━━━━━
+          `───[ BEDROCK SERVER STATUS ]──
 👥 Players: ${b.players.online} / ${b.players.max}
 ⚙️ Version: ${b.version.name || "Unknown"}
 ━━━━━━━━━━━━━━━━━━━
@@ -61,10 +58,10 @@ Server is online✅`
         );
       }
 
-      return message.reply(`❌ Server ${ip}:${port} is offline.`);
+      return message.reply(`❌ Server is offline.`);
     } catch (err) {
       console.error(err);
-      return message.reply("❌ Error fetching server info. Please check IP/Port.");
+      return message.reply("❌ Server not found..");
     }
   }
 };
