@@ -60,7 +60,7 @@ module.exports = {
     author: "Helal",
     countDown: 3,
     role: 0,
-    category: "fun",
+    category: "Game",
     shortDescription: { en: "বাংলা সাধারণ জ্ঞান, কম্পিউটার, বিজ্ঞান ও গণিত কুইজ" }
   },
 
