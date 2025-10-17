@@ -51,8 +51,6 @@ ${Object.keys(nicknames).length > 0
       .map(([uid, nick]) => `- ${nick}`)
       .join("\n")
   : "No nicknames set."}
-
-✨ *Powered by Cat Bot × GPT-5*
 `;
 
       message.reply(msg);
