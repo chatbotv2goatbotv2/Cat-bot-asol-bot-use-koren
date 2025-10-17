@@ -57,7 +57,7 @@ module.exports = {
     name: "quiz",
     aliases: ["question", "exam"],
     version: "8.0",
-    author: "Helal + GPT-5",
+    author: "Helal",
     countDown: 3,
     role: 0,
     category: "fun",
@@ -67,13 +67,13 @@ module.exports = {
   onStart: async function ({ message, event, commandName }) {
     const random = quizList[Math.floor(Math.random() * quizList.length)];
     const quizText = [
-      "🧠 *কুইজ টাইম!*",
+      "guess the answer❓",
       "",
-      `🇧🇩 প্রশ্ন: ${random.question}`,
+      `প্রশ্ন?: ${random.question}`,
       "",
       ...random.options,
       "",
-      "👉 উত্তর দিতে এই মেসেজের রিপ্লাই করো (A, B, C বা D)."
+      "👉 উত্তর দিতে এই মেসেজের রিপ্লাই করো (A, B, C, D)."
     ].join("\n");
 
     const sent = await message.reply({ body: quizText });
@@ -98,9 +98,9 @@ module.exports = {
 
     const optionText = Reply.options.find(o => o.startsWith(correct));
     if (userAns === correct) {
-      await message.reply(`✅ *Correct answer!* 🎉\n→ ${optionText.replace(correct, "").trim()}`);
+      await message.reply(`✅ Correct answer! 1+ 🎉\n→ ${optionText.replace(correct, "").trim()}`);
     } else {
-      await message.reply(`❌ *Wrong answer!* 😢\n✨ Right answer → ${optionText.replace(correct, "").trim()}`);
+      await message.reply(`-Wrong answer!\n✨ Right answer → ${optionText.replace(correct, "").trim()}`);
     }
 
     global.GoatBot.onReply.delete(Reply.messageID);
