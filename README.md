@@ -7,7 +7,7 @@
 
 
 Assalamualaikum Everyone!  
-**𝐖𝐄𝐋𝐂𝐎𝐌 𝐓𝐎 𝐌𝐘 𝐂𝐀𝐓 𝐆𝐎𝐀𝐓 𝐒𝐇𝐈𝐙𝐔𝐊𝐀 𝐁𝐎𝐓**
+**𝐖𝐄𝐋𝐂𝐎𝐌 𝐓𝐎 𝐌𝐘 𝐂𝐀𝐓 𝐆𝐎𝐀𝐓 𝐁𝐎𝐓**
 
 ![Box-shaped Imege](https://i.imgur.com/IhjLvb0.jpeg)
 
@@ -15,7 +15,7 @@ Assalamualaikum Everyone!
   <span style="font-size: 24px; font-weight: bold;"<p align="center">
   <a href="#">`𝐆𝐎𝐀𝐓 𝐂𝐀𝐓 𝐁𝐎𝐓 𝐃𝐄𝐕𝐄𝐋𝐎𝐏𝐄𝐃 𝐁𝐘 𝐇𝐄𝐋𝐀𝐋`"</span><br>
   <p align="center">
-  <a href="#"><img src="http://readme-typing-svg.herokuapp.com?color=cyan&center=true&vCenter=true&multiline=false&lines=`𝐒__𝐇__𝐈__𝐅__𝐀__𝐓`" alt="">
+  <a href="#"><img src="http://readme-typing-svg.herokuapp.com?color=cyan&center=true&vCenter=true&multiline=false&lines=`Helal`" alt="">
 </p>
 
 -------
@@ -110,10 +110,10 @@ ___
 
 ## 👨‍💻 **ABOUT THE DEVELOPER**  
   
-**Name:** **`𝐌𝐃 𝐒𝐇𝐈𝐅𝐀𝐓`**  
-**Nice Name:** **`𝐒𝐈𝐅𝐔`**  
+**Name:** **`Helal`**  
+**Nice Name:** **`Helal`**  
 **Profession:** **`𝐃𝐈𝐆𝐈𝐓𝐀𝐋 𝐌𝐀𝐑𝐊𝐄𝐓𝐈𝐍𝐆 & 𝐂𝐇𝐀𝐓 𝐁𝐎𝐓 𝐃𝐄𝐕𝐄𝐋𝐎𝐏𝐄𝐑`**  
-**Location:** **`𝐊𝐇𝐔𝐋𝐍𝐀 <> 𝐁𝐀𝐍𝐆𝐋𝐀𝐃𝐄𝐒𝐇`**  
+**Location:** **`Jamalpur <> 𝐁𝐀𝐍𝐆𝐋𝐀𝐃𝐄𝐒𝐇`**  
 
 ### 📞 **CONTACT INFORMATION**  
 - **WhatsApp:** **[WHATSAPP ID](https://wa.me/+8801964467614)**  
