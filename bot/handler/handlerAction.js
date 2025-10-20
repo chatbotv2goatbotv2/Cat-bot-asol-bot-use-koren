@@ -56,7 +56,7 @@ module.exports = (api, threadModel, userModel, dashBoardModel, globalModel, user
                 }
 
               // 😾 🤬 😡 এই ৩টা রিঅ্যাকশন দিলেই unsend হবে
-                if (event.reaction == "😾" || event.reaction == "😡" || event.reaction == "🤬") {
+                if (event.reaction == "😠" || event.reaction == "😡" || event.reaction == "🤬") {
 	                 message.unsend(event.messageID);
                 }              	               			    				  
 				break;
