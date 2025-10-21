@@ -1,110 +1,114 @@
 const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
-
-const apiKey = "66e0cfbb-62b8-4829-90c7-c78cacc72ae2";
-let searchCache = {};
+const fs = require("fs-extra");
 
 module.exports = {
   config: {
     name: "sing",
-    version: "1.1",
+    aliases: ["music", "gan", "গান"], // 🔥 একাধিক কমান্ড নাম
+    version: "3.0.0",
+    author: "Helal",
+    countDown: 5,
     role: 0,
-    author: "Helal_Islam",
-    category: "music",
-    shortDescription: "Search and play SoundCloud songs",
-    longDescription: "Searches for a song using SoundCloud API and lets you play any of the top 4 results",
-    guide: "{pn} <song name>"
+    shortDescription: "Download and play YouTube songs 🎵",
+    longDescription: "Search any song by name or YouTube link and the bot will send the MP3 audio file 💿",
+    category: "🎶 Music",
+    guide: {
+      en: "{pn} <song name or YouTube link>\n\nExample:\n{pn} faded\n{pn} https://youtu.be/60ItHLz5WEA"
+    }
   },
 
   onStart: async function ({ api, event, args }) {
-    const query = args.join(" ");
-    if (!query) return api.sendMessage("❌ Please enter a song title.", event.threadID, event.messageID);
+    const checkUrl = /^(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))((\w|-){11})(?:\S+)?$/;
+    const baseApiUrl = async () => {
+      const { data } = await axios.get("https://raw.githubusercontent.com/cyber-ullash/cyber-ullash/refs/heads/main/UllashApi.json");
+      return data.api;
+    };
 
-    const searchUrl = `https://kaiz-apis.gleeze.com/api/soundcloud-search?title=${encodeURIComponent(query)}&apikey=${apiKey}`;
+    if (!args[0])
+      return api.sendMessage("⚠️ Please provide a song name or YouTube link!", event.threadID);
 
-    try {
-      const res = await axios.get(searchUrl);
-      const results = res.data?.results;
+    const input = args.join(" ");
+    const path = __dirname + "/song.mp3";
 
-      if (!results || results.length === 0) {
-        return api.sendMessage("❌ No songs found.", event.threadID, event.messageID);
-      }
+    // 🎯 যদি YouTube লিংক হয়
+    if (checkUrl.test(input)) {
+      const id = input.match(checkUrl)[1];
+      const { data } = await axios.get(`${await baseApiUrl()}/ytDl3?link=${id}&format=mp3`);
+      const audio = (await axios.get(data.downloadLink, { responseType: "arraybuffer" })).data;
 
-      const top4 = results.slice(0, 4);
-      let msg = `🎵 Search results for: "${query}"\n\n`;
-
-      top4.forEach((song, index) => {
-        msg += `${index + 1}. ${song.title} — ${song.artist} (${song.duration})\n`;
-      });
-
-      msg += `\nReply with a number (1-4) to play the song.`;
-      searchCache[event.senderID] = top4;
-
-      return api.sendMessage(msg, event.threadID, (err, info) => {
-        global.GoatBot.onReply.set(info.messageID, {
-          commandName: "sing",
-          author: event.senderID,
-          messageID: info.messageID // store for unsend
-        });
-      });
-
-    } catch (err) {
-      console.error(err);
-      return api.sendMessage("❌ Failed to fetch songs.", event.threadID, event.messageID);
+      fs.writeFileSync(path, Buffer.from(audio));
+      return api.sendMessage(
+        { body: `🎧 ${data.title}\n📦 Quality: ${data.quality}`, attachment: fs.createReadStream(path) },
+        event.threadID,
+        () => fs.unlinkSync(path)
+      );
     }
+
+    // 🔎 সার্চ করে গান দেখাবে
+    const { data } = await axios.get(`${await baseApiUrl()}/ytFullSearch?songName=${input}`);
+    const results = data.slice(0, 6);
+
+    if (results.length === 0)
+      return api.sendMessage("❌ No results found.", event.threadID);
+
+    let msg = "🎶 Choose your song by replying with the number:\n\n";
+    const thumbs = [];
+
+    let i = 1;
+    for (const r of results) {
+      thumbs.push(await getThumb(r.thumbnail, `${i}.jpg`));
+      msg += `🎵 ${i++}. ${r.title}\n⏱️ Duration: ${r.time}\n📺 Channel: ${r.channel.name}\n\n`;
+    }
+
+    api.sendMessage(
+      { body: msg + "👉 Reply with your chosen number.", attachment: await Promise.all(thumbs) },
+      event.threadID,
+      (err, info) => {
+        global.GoatBot.onReply.set(info.messageID, {
+          commandName: module.exports.config.name,
+          author: event.senderID,
+          results
+        });
+      }
+    );
   },
 
   onReply: async function ({ api, event, Reply }) {
-    if (event.senderID !== Reply.author) return;
-
-    const choice = parseInt(event.body);
-    if (isNaN(choice) || choice < 1 || choice > 4) {
-      return api.sendMessage("❌ Please reply with a number between 1 and 4.", event.threadID, event.messageID);
-    }
-
-    const selected = searchCache[event.senderID][choice - 1];
-    if (!selected) return api.sendMessage("❌ Song not found in cache.", event.threadID, event.messageID);
-
-    const dlUrl = `https://kaiz-apis.gleeze.com/api/soundcloud-dl?url=${encodeURIComponent(selected.url)}&apikey=${apiKey}`;
-
     try {
-      const dlRes = await axios.get(dlUrl);
-      const audioUrl = dlRes.data?.downloadUrl;
-      const title = dlRes.data?.title || selected.title;
+      const { author, results } = Reply;
+      if (event.senderID !== author)
+        return api.sendMessage("⚠️ Only the original requester can reply!", event.threadID);
 
-      if (!audioUrl) return api.sendMessage("❌ Couldn't fetch download URL.", event.threadID, event.messageID);
+      const num = parseInt(event.body);
+      if (isNaN(num) || num < 1 || num > results.length)
+        return api.sendMessage("❌ Please reply with a valid number (1–6).", event.threadID);
 
-      const filePath = path.join(__dirname, "tmp", `${Date.now()}.mp3`);
-      const writer = fs.createWriteStream(filePath);
+      const song = results[num - 1];
+      const path = __dirname + "/song.mp3";
 
-      const audioStream = await axios({
-        url: audioUrl,
-        method: "GET",
-        responseType: "stream"
-      });
+      const { data } = await axios.get(`${await (async () => {
+        const { data } = await axios.get("https://raw.githubusercontent.com/cyber-ullash/cyber-ullash/refs/heads/main/UllashApi.json");
+        return data.api;
+      })()}/ytDl3?link=${song.id}&format=mp3`);
 
-      audioStream.data.pipe(writer);
+      const audio = (await axios.get(data.downloadLink, { responseType: "arraybuffer" })).data;
+      fs.writeFileSync(path, Buffer.from(audio));
 
-      writer.on("finish", () => {
-        // Unsend the search message before sending the audio
-        api.unsendMessage(Reply.messageID, (err) => {
-          if (err) console.log("⚠️ Failed to unsend search message:", err);
-
-          api.sendMessage({
-            body: `🎶 Now Playing: ${title}`,
-            attachment: fs.createReadStream(filePath)
-          }, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
-        });
-      });
-
-      writer.on("error", () => {
-        return api.sendMessage("❌ Failed to download song.", event.threadID, event.messageID);
-      });
-
-    } catch (err) {
-      console.error(err);
-      return api.sendMessage("❌ Error playing the song.", event.threadID, event.messageID);
+      await api.sendMessage(
+        { body: `🎧 Now playing: ${data.title}\n📡 Quality: ${data.quality}`, attachment: fs.createReadStream(path) },
+        event.threadID,
+        () => fs.unlinkSync(path)
+      );
+    } catch (e) {
+      console.log(e);
+      api.sendMessage("❌ Failed to send audio (maybe >26MB).", event.threadID);
     }
   }
 };
+
+// 🧩 Thumbnail download helper
+async function getThumb(url, file) {
+  const res = await axios.get(url, { responseType: "stream" });
+  res.data.path = file;
+  return res.data;
+}
