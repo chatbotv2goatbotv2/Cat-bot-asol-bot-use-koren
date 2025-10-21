@@ -1,0 +1,79 @@
+module.exports = {
+  config: {
+    name: "radmin",
+    aliases: ["unrespect"],
+    version: "1.0",
+    author: "Helal",
+    countDown: 0,
+    role: 0,
+    shortDescription: "Remove admin rights with confirmation",
+    longDescription: "Only group admins can use this. Removes mentioned user's admin role after confirmation reaction.",
+    category: "🛡️ Moderation",
+    guide: "{pn} @username"
+  },
+
+  onStart: async function ({ api, event }) {
+    try {
+      const { threadID, senderID, messageID } = event;
+      const threadInfo = await api.getThreadInfo(threadID);
+
+      // ✅ Check if command sender is admin
+      const isAdmin = threadInfo.adminIDs.some(item => (item.id || item) == senderID);
+      if (!isAdmin)
+        return api.sendMessage("❌ Only group admins can use this command!", threadID, messageID);
+
+      // ✅ Check mention
+      const mention = Object.keys(event.mentions || {});
+      if (mention.length === 0)
+        return api.sendMessage("⚠️ Please mention a user to remove admin!", threadID, messageID);
+
+      const targetID = mention[0];
+      const targetName = event.mentions[targetID];
+
+      // ✅ Ask for confirmation
+      const confirmMsg = await api.sendMessage(
+        `⚠️ Are you sure you want to remove admin from ${targetName}?\nPlease react 👍 to confirm or ❌ to cancel.`,
+        threadID
+      );
+
+      // ✅ Save data for reaction listener
+      global.GoatBot.onReaction.set(confirmMsg.messageID, {
+        commandName: module.exports.config.name,
+        author: senderID,
+        targetID,
+        threadID
+      });
+
+    } catch (err) {
+      console.error("Radmin Command Error:", err);
+    }
+  },
+
+  onReaction: async function ({ api, event, Reaction }) {
+    const { author, targetID, threadID } = Reaction;
+    if (event.userID !== author) return;
+
+    const botID = api.getCurrentUserID();
+    const threadInfo = await api.getThreadInfo(threadID);
+    const botIsAdmin = threadInfo.adminIDs.some(a => (a.id || a) == botID);
+
+    if (!botIsAdmin)
+      return api.sendMessage("⚠️ I need admin rights to remove other admins!", threadID);
+
+    if (event.reaction === "👍") {
+      try {
+        await api.changeAdminStatus(threadID, targetID, false);
+        return api.sendMessage(
+          `✅ Successfully removed admin rights from <@${targetID}>.`,
+          threadID,
+          null,
+          { mentions: [{ id: targetID, tag: "user" }] }
+        );
+      } catch (e) {
+        return api.sendMessage("❌ Failed to remove admin. Check my permissions!", threadID);
+      }
+    } else if (event.reaction === "❌") {
+      return api.sendMessage("🚫 Operation cancelled.", threadID);
+    }
+  }
+};
