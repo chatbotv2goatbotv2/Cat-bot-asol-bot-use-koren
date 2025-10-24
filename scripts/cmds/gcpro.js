@@ -7,7 +7,7 @@ module.exports = {
     shortDescription: "Activate stylish group protection",
     longDescription:
       "Activates advanced group security: prevents name/theme change, spam messages, and protects admin settings with neon-styled alerts.",
-    category: "system",
+    category: "moderation",
     guide: {
       en: "{pn} on/off"
     }
@@ -31,7 +31,7 @@ module.exports = {
       };
 
       return message.reply(
-        "🌌 **DIGITAL GC PROTECTION ACTIVATED!**\n" +
+        "DIGITAL GC PROTECTION ACTIVATED\n" +
         "🔒 Group is now under security mode.\n" +
         "👑 Only Admins & Bot Admin can change settings."
       );
