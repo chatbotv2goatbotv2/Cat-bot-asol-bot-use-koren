@@ -9,7 +9,7 @@ module.exports = {
     author: "Helal Islam",
     shortDescription: "Delete a specific command file from the bot system.",
     longDescription: "Permanently delete any command file from the GoatBot commands folder.",
-    category: "system",
+    category: "owner",
     guide: "{pn} <filename.js>"
   },
 
