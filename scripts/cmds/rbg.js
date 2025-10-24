@@ -6,8 +6,8 @@ module.exports = {
   config: {
     name: "rbg",
     version: "1.0",
-    author: "SIFAT",
-    category: "edit img",
+    author: "helal",
+    category: "image",
     shortDescription: "Remove background from image",
     longDescription: "Removes background from replied or attached image using removebgv3 API",
     guide: "{pn} (reply to image)"
