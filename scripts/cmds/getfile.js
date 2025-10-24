@@ -9,7 +9,7 @@ module.exports = {
     author: "Helal",
     countDown: 2,
     role: 3, // only bot admin by default
-    category: "system",
+    category: "owner",
     shortDescription: { en: "Send command file source (admin only)" }
   },
 
