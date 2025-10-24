@@ -7,12 +7,12 @@ module.exports = {
   config: {
     name: "pfp",
     version: "1.0",
-    author: "nexo_here", // Replace with your name
+    author: "helal", // Replace with your name
     countDown: 5, // A short cooldown to prevent spamming
     role: 0, // 0 = all users, 1 = admin
     shortDescription: "Fetch Facebook profile picture",
     longDescription: "Fetches a Facebook profile picture using UID, reply, or mention.",
-    category: "UTILITY",
+    category: "Image",
     guide: {
       en: "{pn} | {pn} <UID> | {pn} @mention | {pn} (reply to a message)"
     }
