@@ -6,12 +6,12 @@ module.exports = {
   config: {
     name: "edit",
     version: "1.0",
-    author: "RI F AT | NeoKEX",
+    author: "Helal",
     countDown: 5,
     role: 0,
     shortDescription: "Edit image using prompt",
     longDescription: "Edit an uploaded image based on your prompt.",
-    category: "AI-IMAGE",
+    category: "image",
     guide: "{p}edit [prompt] (reply to image)"
   },
 
