@@ -4,7 +4,7 @@ const request = require("request");
 module.exports = {
 	config: {
 		name: "Out",
-		aliases: ["l"],
+		aliases: ["vag"],
 		version: "1.0",
 		author: "Helal",
 		countDown: 5,
