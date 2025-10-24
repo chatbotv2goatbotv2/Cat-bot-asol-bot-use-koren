@@ -7,12 +7,12 @@ module.exports = {
         name: "marry",
         aliases: ["marry"],
         version: "1.2",
-        author: "Unknown",
+        author: "helal",
         countDown: 5,
         role: 0,
         shortDescription: "Get a virtual marriage photo",
         longDescription: "Mention someone to marry them virtually with a cute photo and message",
-        category: "love",
+        category: "fun",
         guide: "{pn} @mention"
     },
 
