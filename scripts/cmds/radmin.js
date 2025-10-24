@@ -8,7 +8,7 @@ module.exports = {
     role: 0,
     shortDescription: "Remove admin rights with confirmation",
     longDescription: "Only group admins can use this. Removes mentioned user's admin role after confirmation reaction.",
-    category: "🛡️ Moderation",
+    category: "moderation",
     guide: "{pn} @username"
   },
 
