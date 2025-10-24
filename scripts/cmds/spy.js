@@ -149,8 +149,8 @@ module.exports = {
     name: "spy",
     version: "6.6",
     role: 0,
-    author: "SIFAT",
-    category: "information",
+    author: "Helal",
+    category: "info",
     description: "spy card with Facebook username/handle below UID",
     countDown: 5
   },
