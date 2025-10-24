@@ -8,7 +8,7 @@ module.exports = {
     author: "Helal Islam",
     shortDescription: "Show all bot command files in a stylish way.",
     longDescription: "Lists all available command files from the bot folder with emoji and design.",
-    category: "system",
+    category: "owner",
     guide: "{pn}filelist"
   },
 
