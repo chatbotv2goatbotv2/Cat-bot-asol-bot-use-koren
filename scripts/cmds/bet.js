@@ -22,7 +22,7 @@ module.exports = {
     author: "Helal",
     shortDescription: { en: "One-click emoji bet with 45/55 chance" },
     longDescription: { en: "User gives amount, bot selects emoji, result is automatic." },
-    category: "Game"
+    category: "game"
   },
   langs: {
     en: {
