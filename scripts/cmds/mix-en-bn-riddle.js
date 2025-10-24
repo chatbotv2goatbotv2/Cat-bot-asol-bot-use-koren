@@ -95,7 +95,7 @@ module.exports = {
     author: "Helal",
     countDown: 3,
     role: 0,
-    category: "fun",
+    category: "game",
     shortDescription: { en: "Play large random Bangla or English riddles (Standalone)" }
   },
 
