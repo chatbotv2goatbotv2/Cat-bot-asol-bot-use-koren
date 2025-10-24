@@ -6,7 +6,7 @@ module.exports.config = {
   role: 2,
   author: "Dipto",
   description:{en: "Sdxl 3.1 Image Generator"},
-  category: "Image gen",
+  category: "AI-IMAGE",
   guide: "{pn} [prompt] --ratio 1:1\n{pn} [prompt]",
   countDown: 15,
 };
