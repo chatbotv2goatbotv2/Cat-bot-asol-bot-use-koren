@@ -10,7 +10,7 @@ module.exports = {
     role: 0,
     shortDescription: "Unlimited AI image generator (auto API switch)",
     longDescription: "Generates AI images with auto API fallback (no API key, no limit).",
-    category: "AI",
+    category: "AI-IMAGE",
     guide: {
       en: "{pn} <prompt>\nExample:\n{pn} make a gaming logo"
     }
