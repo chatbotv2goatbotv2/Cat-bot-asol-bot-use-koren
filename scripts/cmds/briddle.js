@@ -41,13 +41,13 @@ const activeRiddles = new Map();
 
 module.exports = {
   config: {
-    name: "briddle",
+    name: "riddle",
     aliases: ["banglariddle", "bhriddle"],
     version: "5.0",
     author: "Helal",
     countDown: 3,
     role: 0,
-    category: "fun",
+    category: "game",
     shortDescription: { en: "Bangla riddles — fully standalone reply system" }
   },
 
