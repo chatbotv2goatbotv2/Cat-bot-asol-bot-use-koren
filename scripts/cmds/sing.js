@@ -11,7 +11,7 @@ module.exports = {
     role: 0,
     shortDescription: "Download and play YouTube songs 🎵",
     longDescription: "Search any song by name or YouTube link and the bot will send the MP3 audio file 💿",
-    category: "🎶 Music",
+    category: "Music",
     guide: {
       en: "{pn} <song name or YouTube link>\n\nExample:\n{pn} faded\n{pn} https://youtu.be/60ItHLz5WEA"
     }
