@@ -7,12 +7,12 @@ module.exports = {
     name: "create",
     aliases: [],
     version: "1.0",
-    author: "Islamick Chat",
+    author: "Helal",
     countDown: 2,
     role: 0,
     shortDescription: "Generate AI image",
     longDescription: "Use prompt to generate AI image from pollinations.ai",
-    category: "image generator",
+    category: "AI-IMAGE",
     guide: {
       vi: "[prompt]",
       en: "[prompt]"
