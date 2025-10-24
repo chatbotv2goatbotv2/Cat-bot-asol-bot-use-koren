@@ -11,7 +11,7 @@ module.exports = {
     version: "1.2",
     author: "Helal",
     description: "Create a friendship frame with two users' profile pictures 🌸",
-    category: "fun"
+    category: "image"
   },
 
   onStart: async function({ api, event, args }) {
