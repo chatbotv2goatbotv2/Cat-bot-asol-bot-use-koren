@@ -9,7 +9,7 @@ module.exports = {
         countDown: 1,
         role: 0,
         description: "View, transfer, request, or add/delete money",
-        category: "economy",
+        category: "game",
         guide: { en: `
             {pn}: help to view cmds guide
             {pn}: view your balance
