@@ -56,7 +56,7 @@ module.exports = {
     author: "Helal",
     countDown: 3,
     role: 0,
-    category: "fun",
+    category: "game",
     shortDescription: { en: "Play English riddles (standalone reply system)" }
   },
 
