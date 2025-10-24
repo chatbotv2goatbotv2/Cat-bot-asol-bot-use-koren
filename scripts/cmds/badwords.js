@@ -3,14 +3,14 @@ module.exports = {
 		name: "badwords",
 		aliases: ["badword"],
 		version: "1.4",
-		author: "NTKhang",
+		author: "Helal",
 		countDown: 5,
 		role: 1,
 		description: {
 			vi: "Bật/tắt/thêm/xóa cảnh báo vi phạm từ thô tục, nếu thành viên vi phạm sẽ bị cảnh báo, lần 2 sẽ kick khỏi box chat",
 			en: "Turn on/off/add/remove bad words warning, if a member violates, he will be warned, the second time he will be kicked out of the chat box"
 		},
-		category: "box chat",
+		category: "group",
 		guide: {
 			vi: "   {pn} add <words>: thêm từ cấm (có thể thêm nhiều từ cách nhau bằng dấu phẩy \",\" hoặc dấu gạch đứng \"|\""
 				+ "\n   {pn} delete <words>: xóa từ cấm (có thể xóa nhiều từ cách nhau bằng dấu phẩy \",\" hoặc dấu gạch đứng \"|\""
