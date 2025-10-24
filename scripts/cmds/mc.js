@@ -11,7 +11,7 @@ module.exports = {
     author: "Helal",
     shortDescription: "Show Minecraft server status with player list.",
     longDescription: "Checks Java/Bedrock Minecraft servers and displays player info beautifully.",
-    category: "🎮 GAME",
+    category: "game",
     guide: "{pn}mc <server-ip>"
   },
 
