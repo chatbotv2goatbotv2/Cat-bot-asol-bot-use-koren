@@ -11,7 +11,7 @@ function loadScores() {
 module.exports = {
   config: {
     name: "gametop",
-    category: "fun",
+    category: "game",
     description: "Show leaderboard of all games"
   },
 
