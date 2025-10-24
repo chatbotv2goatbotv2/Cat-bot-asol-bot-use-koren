@@ -7,7 +7,7 @@ module.exports = {
     countDown: 0,
     role: 0,
     description: "Show Cat Bot owner and system info 🌺",
-    category: "system",
+    category: "info",
     guide: {
       en: "{pn} — Show bot information and owner details."
     }
