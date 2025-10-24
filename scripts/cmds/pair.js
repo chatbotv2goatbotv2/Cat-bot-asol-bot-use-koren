@@ -6,8 +6,8 @@ const path = require("path");
 module.exports = {
   config: {
     name: "pair",
-    author: "Nyx x ariyan x fahad x saim",
-    category: "love",
+    author: "Helal",
+    category: "fun",
   },
 
   onStart: async function ({ api, event, usersData }) {
