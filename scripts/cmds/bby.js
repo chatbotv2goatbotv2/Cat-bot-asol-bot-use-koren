@@ -147,7 +147,7 @@ module.exports.onReply = async ({ api, event, Reply }) => {
 module.exports.onChat = async ({ api, event, message }) => {
     try {
         const body = event.body ? event.body.toLowerCase() : "";
-        if (body.startsWith("baby") || body.startsWith("bby") || body.startsWith("bot") || body.startsWith("jan") || body.startsWith("babu") || body.startsWith("janu")) {
+        if (body.startsWith("baby") || body.startsWith("cat") || body.startsWith("bot") || body.startsWith("cat bot") || body.startsWith("𝐜𝐚𝐭 𝐛𝐨𝐭") || body.startsWith("𝐜𝐚𝐭")) {
             const arr = body.replace(/^\S+\s*/, "");
             const randomReplies = ["Bol 🐸", "Bol suntechi 🐍", "Dakis ken 😾?", "Bolo jaan ki korte pari tomar jonno 😞"];
             if (!arr) {
