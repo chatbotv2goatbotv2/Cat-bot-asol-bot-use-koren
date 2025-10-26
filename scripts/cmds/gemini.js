@@ -14,7 +14,7 @@ module.exports = {
 
   onStart: async function({ api, event, args }) {
     const uid = 1;
-    const apikey = "AIzaSyAvXq7xY4uPgswNqBxEOlixIQf4-g8JVe4";
+    const apikey = "Your_api_key";
 
     // Check if reply to an image
     let isReplyToImage = false;
