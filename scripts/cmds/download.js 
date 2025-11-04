@@ -5,7 +5,7 @@ module.exports = {
     config: {
         name: "autolink",
         version: "1.1",
-        author: "SaGor FIXED by Akash Translate Bangla to English By Helal",
+        author: "SaGor FIXED by Akash",
         countDown: 5,
         role: 0,
         shortDescription: "Auto-download & send videos with title (Improved)",
@@ -19,14 +19,14 @@ module.exports = {
         const messageID = event.messageID;
         const message = event.body || "";
 
-        // Find all links in the message
+        // লিঙ্ক খুঁজে বের করা (একাধিক)
         const linkMatches = message.match(/(https?:\/\/[^\s]+)/g);
         if (!linkMatches || linkMatches.length === 0) return;
 
-        // Remove duplicate links
+        // ডুপ্লিকেট রিমুভ
         const uniqueLinks = [...new Set(linkMatches)];
 
-        // React: start processing
+        // রিঅ্যাক্ট: প্রসেসিং শুরু
         api.setMessageReaction("⏳", messageID, () => {}, true);
 
         let successCount = 0;
@@ -34,25 +34,25 @@ module.exports = {
 
         for (const url of uniqueLinks) {
             try {
-                // Send loading message WITHOUT showing the link
+                // লোডিং মেসেজ (বড় ভিডিওর জন্য)
                 const loadingMsg = await api.sendMessage(
-                    `Downloading please wait... ⏳`,
+                    `⏳ Downloading please wait...\n...`,
                     threadID
                 );
 
                 const { title, filePath } = await downloadVideo(url);
                 if (!filePath || !fs.existsSync(filePath)) {
-                    throw new Error("File not downloaded");
+                    throw new Error("Failed to download video");
                 }
 
-                // Check file size (limit 25MB)
+                // ফাইল সাইজ চেক (25MB = 25 * 1024 * 1024 bytes)
                 const stats = fs.statSync(filePath);
                 const fileSizeInMB = stats.size / (1024 * 1024);
 
                 if (fileSizeInMB > 25) {
                     api.unsendMessage(loadingMsg.messageID);
                     api.sendMessage(
-                        `❌ Video too large (${fileSizeInMB.toFixed(1)} MB).`,
+                        `❌ ভিডিও খুব বড় (${fileSizeInMB.toFixed(1)} MB)\n🔗 ${url}`,
                         threadID
                     );
                     fs.unlinkSync(filePath);
@@ -60,7 +60,7 @@ module.exports = {
                     continue;
                 }
 
-                // Send video with title
+                // সফল হলে পাঠানো
                 await api.sendMessage(
                     {
                         body: `🎬 *${title || "Video"}*`,
@@ -68,11 +68,11 @@ module.exports = {
                     },
                     threadID,
                     () => {
-                        fs.unlinkSync(filePath); // Delete after sending
+                        fs.unlinkSync(filePath); // ফাইল মুছে ফেলা
                     }
                 );
 
-                // Remove loading message
+                // লোডিং মেসেজ মুছে ফেলা
                 api.unsendMessage(loadingMsg.messageID);
                 successCount++;
 
@@ -80,23 +80,23 @@ module.exports = {
                 failCount++;
                 api.unsendMessage(loadingMsg?.messageID || "");
                 api.sendMessage(
-                    `❌ Download failed: ${err.message || "Unknown error"}`,
+                    `❌ Download Failed: ${err.message || "Unknown error"}\n🔗 ${url.substring(0, 50)}...`,
                     threadID
                 );
             }
         }
 
-        // Final reaction
+        // ফাইনাল রিঅ্যাক্ট
         const finalReaction = successCount > 0 && failCount === 0 ? "✅" :
                               successCount > 0 ? "⚠️" : "❌";
 
         api.setMessageReaction(finalReaction, messageID, () => {}, true);
 
-        // Summary message (optional)
+        // সারাংশ মেসেজ (ঐচ্ছিক)
         if (uniqueLinks.length > 1) {
             setTimeout(() => {
                 api.sendMessage(
-                    `📊 Summary: ✅ ${successCount} succeeded | ❌ ${failCount} failed`,
+                    `📊 Summary: ✅ ${successCount} Success  ❌ ${failCount} Failed`,
                     threadID
                 );
             }, 2000);
