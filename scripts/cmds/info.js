@@ -2,7 +2,7 @@ module.exports = {
   config: {
     name: "info",
     aliases: ["owner", "botinfo", "admin"],
-    version: "6.9.0",
+    version: "6.9.3",
     author: "Helal",
     countDown: 0,
     role: 0,
@@ -13,14 +13,8 @@ module.exports = {
     }
   },
 
-  onStart: async function ({ api, event, global, client }) {
-    // Safe command count
-    const commandCount =
-      (global?.GoatBot?.commands?.size ||
-       client?.commands?.size ||
-       142);
-
-    // Bot uptime calculation
+  onStart: async function ({ api, event }) {
+    // Uptime calculation
     const uptime = process.uptime();
     const hours = Math.floor(uptime / 3600);
     const minutes = Math.floor((uptime % 3600) / 60);
@@ -30,43 +24,34 @@ module.exports = {
 ╭──────────────╮
 │𝐎𝐰𝐧𝐞𝐫 & 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎 🌺  │
 ╰──────────────╯
-🤖 Name: 𝐂𝐀𝐓 𝐁𝐎𝐓
+🤖 Name: CAT BOT
 📜 Version: 2
-👑 Owner: ♛𝐇𝐞𝐥𝐚𝐥 𝐈𝐬𝐥𝐚𝐦♛
+👑 Owner: ♛ Helal Islam ♛
 ☪️ Religion: Islam 
-🥳 Birthday :  Private 
-🎂 Age : private 
-👨‍🎓 Education: Private 
-👷‍♂️ Job : Student 
-❤️ Relation : No ❌
-👬 Friendly : Yes ✅
-👨‍🚒 Bad : As for you
-📞 Whatsapp : private 
-☎️ Number : private
-🌍 Current address : Jamalpur 
-📅 Creation Date : 10/1/2025
-🗺️ Address : Jamalpur,Bangladesh
-🔌 Made in : Bangladesh 🇧🇩
-💬 Prefix : /
-💾 Commands Loaded: ${commandCount}
+🎂 Age: Private 
+👷‍♂️ Job: Student 
+❤️ Relation: No ❌
+👬 Friendly: Yes ✅
+📞 Whatsapp: Private 
+🌍 Address: Jamalpur, Bangladesh
+📅 Creation Date: 10/1/2025
+🔌 Made in: Bangladesh 🇧🇩
+💬 Prefix: /
+💾 Commands Loaded: 142
 🕒 Uptime: ${hours}h ${minutes}m ${seconds}s
+
+💳 Facebook: @helal323
 ───────────────────
-🌐 𝐅𝐚𝐜𝐞𝐛𝐨𝐨𝐤:61580156099497
-💳 𝐅𝐚𝐜𝐞𝐛𝐨𝐨𝐤:@helal323
-───────────────────
-24/7 𝐁𝐨𝐭       
-…...…,•’``’•,•’``’•,
-…...…’•,`’🌹’` ,•’
-...……...`’•, ,•’,•’``’•,•’``’•,
-,•’``’•,•’``’•,’•…’•,`’🌹’` ,•’
-’•,`’🌹’` ,•’….....`’•, ,•’
-....`’•, ,•’ ...
-…...…,•’``’•,•’``’•, 
-…...…’•,`’🌹’` ,•’
-...……...`’•, ,•’
-───────────────────
-💖 Thanks for using me 💖
-   I'm Always Free 😀
+
+…...…,•’\`\`’•,•’\`\`’•,
+…...…’•, \`’🌹’\` ,•’
+...……... \`’•, ,•’,•’\`\`’•,•’\`\`’•,
+,•’\`\`’•,•’\`\`’•,’•…’•, \`’🌹’\` ,•’
+’•, \`’🌹’\` ,•’…..... \`’•, ,•’
+.... \`’•, ,•’ ...
+…...…,•’\`\`’•,•’\`\`’•, 
+…...…’•, \`’🌹’\` ,•’ 
+...……... \`’•, ,•'
 `;
 
     api.sendMessage(message, event.threadID, event.messageID);
