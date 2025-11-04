@@ -36,7 +36,7 @@ module.exports = {
             try {
                 // লোডিং মেসেজ (বড় ভিডিওর জন্য)
                 const loadingMsg = await api.sendMessage(
-                    `⏳ Downloading please wait...\n...`,
+                    `⏳ Downloading please wait...\n⏳`,
                     threadID
                 );
 
