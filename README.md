@@ -1,66 +1,98 @@
-<svg width="100%" height="100%" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+<!-- 🌈 Full Neon Animated README (Only one file, no external assets) -->
+<div align="center" style="background:#000; padding:25px; border-radius:20px;">
+
+<h1 style="color:#0ff; text-shadow:0 0 25px #0ff, 0 0 40px #f0f;">
+✨ CAT BOT ✨
+</h1>
+
+<h3 style="color:#ff00ff; text-shadow:0 0 15px #ff00ff;">
+Created by 💎 <span style="color:#00ffff;">Helal</span> 💎
+</h3>
+
+<br/>
+
+<!-- 💬 Neon Buttons -->
+<p>
+<a href="https://m.me/helal.cat" target="_blank" style="text-decoration:none;">
+<img src="https://img.shields.io/badge/Messenger-Chat-%2300ffff?style=for-the-badge&logo=messenger&logoColor=white">
+</a>
+<a href="https://wa.me/8801XXXXXXXXX" target="_blank" style="text-decoration:none;">
+<img src="https://img.shields.io/badge/WhatsApp-Message-%2300ff99?style=for-the-badge&logo=whatsapp&logoColor=white">
+</a>
+<a href="https://facebook.com/helal.cat" target="_blank" style="text-decoration:none;">
+<img src="https://img.shields.io/badge/Facebook-Profile-%230099ff?style=for-the-badge&logo=facebook&logoColor=white">
+</a>
+<a href="https://youtube.com/@helal-catbot" target="_blank" style="text-decoration:none;">
+<img src="https://img.shields.io/badge/Youtube-Subscribe-%23ff0033?style=for-the-badge&logo=youtube&logoColor=white">
+</a>
+</p>
+
+<br/>
+
+<!-- ⚙️ Neon Animated SVG Section -->
+<svg width="100%" height="320" viewBox="0 0 600 300">
   <defs>
-    <linearGradient id="rainbow" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#ff0055">
-        <animate attributeName="offset" values="0;1" dur="3.5s" repeatCount="indefinite"/>
+    <linearGradient id="neonRainbow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff00ff">
+        <animate attributeName="offset" values="0;1;0" dur="4s" repeatCount="indefinite"/>
       </stop>
-      <stop offset="25%" stop-color="#ffcc00">
-        <animate attributeName="offset" values="0.25;0" dur="3.5s" repeatCount="indefinite"/>
+      <stop offset="50%" stop-color="#00ffff">
+        <animate attributeName="offset" values="0.5;0;0.5" dur="4s" repeatCount="indefinite"/>
       </stop>
-      <stop offset="50%" stop-color="#00ff99">
-        <animate attributeName="offset" values="0.5;1" dur="3.5s" repeatCount="indefinite"/>
-      </stop>
-      <stop offset="75%" stop-color="#00ccff">
-        <animate attributeName="offset" values="0.75;0.25" dur="3.5s" repeatCount="indefinite"/>
-      </stop>
-      <stop offset="100%" stop-color="#cc00ff">
-        <animate attributeName="offset" values="1;0.5" dur="3.5s" repeatCount="indefinite"/>
+      <stop offset="100%" stop-color="#ff00ff">
+        <animate attributeName="offset" values="1;0;1" dur="4s" repeatCount="indefinite"/>
       </stop>
     </linearGradient>
   </defs>
 
-  <rect width="100%" height="100%" fill="#050505"/>
-
-  <g>
-    <circle cx="120" cy="90" r="4" fill="url(#rainbow)">
-      <animate attributeName="cy" values="90;350;90" dur="6s" repeatCount="indefinite"/>
-      <animate attributeName="cx" values="120;520;120" dur="10s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="400" cy="200" r="3" fill="url(#rainbow)">
-      <animate attributeName="cy" values="200;80;200" dur="8s" repeatCount="indefinite"/>
-      <animate attributeName="cx" values="400;140;400" dur="9s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="260" cy="280" r="5" fill="url(#rainbow)">
-      <animate attributeName="cy" values="280;100;280" dur="7s" repeatCount="indefinite"/>
-      <animate attributeName="cx" values="260;540;260" dur="9s" repeatCount="indefinite"/>
-    </circle>
-  </g>
-
-  <rect x="10" y="10" width="580" height="380" rx="20" stroke="url(#rainbow)" stroke-width="4" fill="transparent">
-    <animate attributeName="stroke-dasharray" values="20,10;50,5;10,20;20,10" dur="2s" repeatCount="indefinite"/>
+  <!-- Glowing Border -->
+  <rect x="10" y="10" width="580" height="280" rx="25" ry="25"
+        stroke="url(#neonRainbow)" stroke-width="4" fill="none">
+    <animate attributeName="stroke-dasharray" values="10,20;30,10;10,20" dur="2s" repeatCount="indefinite"/>
   </rect>
 
-  <rect x="16" y="16" width="568" height="368" rx="18" stroke="url(#rainbow)" stroke-width="3" fill="transparent">
-    <animate attributeName="stroke-dasharray" values="10,5;30,10;5,15;10,5" dur="2s" repeatCount="indefinite"/>
-  </rect>
-
-  <rect x="50" y="40" width="500" height="320" rx="20" fill="#1118" stroke="#fff2" stroke-width="1.5"/>
-
-  <text x="50%" y="90" text-anchor="middle" font-size="40" font-family="Orbitron, sans-serif" fill="url(#rainbow)">
-    💫 HELAL CAT BOT 💫
-    <animateTransform attributeName="transform" type="scale" values="1;1.03;1" dur="3s" repeatCount="indefinite"/>
-  </text>
-
-  <circle cx="300" cy="200" r="62" fill="none" stroke="url(#rainbow)" stroke-width="3">
-    <animateTransform attributeName="transform" type="rotate" from="0 300 200" to="360 300 200" dur="10s" repeatCount="indefinite"/>
+  <!-- Spinning Circle -->
+  <circle cx="300" cy="150" r="80" stroke="url(#neonRainbow)" stroke-width="4" fill="none">
+    <animateTransform attributeName="transform" type="rotate" from="0 300 150" to="360 300 150" dur="6s" repeatCount="indefinite"/>
   </circle>
 
-  <text x="300" y="215" text-anchor="middle" font-size="50" font-weight="bold" font-family="Orbitron, sans-serif" fill="url(#rainbow)">
-    HELAL 💥
-    <animate attributeName="opacity" values="1;0.3;1" dur="4s" repeatCount="indefinite"/>
+  <!-- Main Neon Text -->
+  <text x="50%" y="160" text-anchor="middle" fill="url(#neonRainbow)" font-size="40" font-family="monospace">
+    CAT BOT
+    <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/>
   </text>
 
-  <text x="50%" y="360" text-anchor="middle" font-size="18" font-family="Segoe UI, Verdana, sans-serif" fill="url(#rainbow)">
-    ⚡ Developed By Helal ⚡
+  <!-- Small Neon Tagline -->
+  <text x="50%" y="200" text-anchor="middle" fill="#00ffff" font-size="16" font-family="Verdana">
+    CREATED BY HELAL ⚡ AUTOMATION WITH STYLE
   </text>
 </svg>
+
+<br/>
+
+<!-- ❤️ Neon Love -->
+<p style="font-size:25px; color:#ff00ff; text-shadow:0 0 20px #ff00ff, 0 0 40px #ff0099;">
+💖 LOVE • CODE • CAT 💖
+</p>
+
+<!-- 🚗 Animated Neon Car (ASCII style) -->
+<pre style="color:#0ff; text-shadow:0 0 20px #0ff;">
+      ______
+   __/  |___\_
+  |  _     _  ``-.
+  '-(O)---(O)----'
+</pre>
+
+<!-- 🚆 Moving Train (pure emoji animation via SVG) -->
+<svg width="100%" height="80">
+  <text x="0%" y="50%" font-size="22" fill="url(#neonRainbow)">
+    🚆🚆🚆💨💨💨
+    <animate attributeName="x" values="-20%;120%" dur="8s" repeatCount="indefinite"/>
+  </text>
+</svg>
+
+<!-- ⚡ Footer -->
+<p style="color:#00ffff; text-shadow:0 0 20px #00ffff; font-size:16px;">
+  💎 © 2025 Helal | CAT BOT PROJECT 💎
+</p>
+</div>
