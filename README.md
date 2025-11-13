@@ -1,64 +1,79 @@
-<!-- ========================= -->
-<!--  ✨ HELAL NEON UNIVERSE ✨  -->
-<!-- ========================= -->
+<svg width="100%" height="100%" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="rainbow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff0055">
+        <animate attributeName="offset" values="0;1" dur="3.5s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="25%" stop-color="#ffcc00">
+        <animate attributeName="offset" values="0.25;0" dur="3.5s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="50%" stop-color="#00ff99">
+        <animate attributeName="offset" values="0.5;1" dur="3.5s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="75%" stop-color="#00ccff">
+        <animate attributeName="offset" values="0.75;0.25" dur="3.5s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#cc00ff">
+        <animate attributeName="offset" values="1;0.5" dur="3.5s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+  </defs>
 
-<p align="center">
-  <img src="https://i.imgur.com/dBaSKWF.gif" width="100%" height="40" alt="neon divider"/>
-</p>
+  <!-- Dark background -->
+  <rect width="100%" height="100%" fill="#0a0a0a"/>
 
-<h1 align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=Orbitron&size=44&duration=4500&pause=800&color=00FFFF&center=true&vCenter=true&width=900&lines=💫+HELAL+NEON+UNIVERSE+💫;⚡+HELAL+CAT+GOAT+BOT+⚡;💖+DEVELOPED+BY+HELAL+💖" alt="HELAL Neon Title">
-</h1>
+  <!-- Rainbow Dots Background -->
+  <g>
+    <circle cx="100" cy="100" r="4" fill="url(#rainbow)">
+      <animate attributeName="cy" values="100;380;100" dur="6s" repeatCount="indefinite"/>
+      <animate attributeName="cx" values="100;500;100" dur="12s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="400" cy="200" r="3" fill="url(#rainbow)">
+      <animate attributeName="cy" values="200;50;200" dur="8s" repeatCount="indefinite"/>
+      <animate attributeName="cx" values="400;100;400" dur="10s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="250" cy="300" r="5" fill="url(#rainbow)">
+      <animate attributeName="cy" values="300;80;300" dur="7s" repeatCount="indefinite"/>
+      <animate attributeName="cx" values="250;550;250" dur="9s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="500" cy="120" r="4" fill="url(#rainbow)">
+      <animate attributeName="cy" values="120;350;120" dur="11s" repeatCount="indefinite"/>
+      <animate attributeName="cx" values="500;200;500" dur="13s" repeatCount="indefinite"/>
+    </circle>
+  </g>
 
-<p align="center">
-  <img src="https://i.imgur.com/YCw47Dm.gif" width="420" alt="neon wave" />
-</p>
+  <!-- Outer rainbow border -->
+  <rect x="10" y="10" width="580" height="380" rx="20" stroke="url(#rainbow)" stroke-width="4" fill="transparent">
+    <animate attributeName="stroke-dasharray" values="20,10;50,5;10,20;20,10" dur="2s" repeatCount="indefinite"/>
+  </rect>
 
-<p align="center">
-  <img src="https://i.imgur.com/dBaSKWF.gif" width="100%" height="40" alt="neon divider"/>
-</p>
+  <!-- Inner rainbow border (double effect) -->
+  <rect x="16" y="16" width="568" height="368" rx="18" stroke="url(#rainbow)" stroke-width="3" fill="transparent">
+    <animate attributeName="stroke-dasharray" values="10,5;30,10;5,15;10,5" dur="2s" repeatCount="indefinite"/>
+  </rect>
 
----
+  <!-- Glass box -->
+  <rect x="50" y="40" width="500" height="320" rx="20" fill="#1118" stroke="#fff2" stroke-width="1.5"/>
 
-## 🔮 HELAL CAT GOAT BOT — NEON EDITION
+  <!-- Title text -->
+  <text x="50%" y="90" text-anchor="middle" font-size="42" font-family="Segoe UI, Verdana, sans-serif" fill="url(#rainbow)">
+    ☠️ ☠️ MD SIFAT ☠️ ☠️ 
+    <animateTransform attributeName="transform" type="scale" values="1;1.03;1" dur="3s" repeatCount="indefinite"/>
+  </text>
 
-**HELAL CAT GOAT BOT** — একদম futuristic, neon-glow messenger bot।  
-Auto chat, image gen, photo edit, downloader, games, moderation — সবকিছুই এক জায়গায়, Helal-style।  
+  <!-- Circle border around text -->
+  <circle cx="300" cy="200" r="62" fill="none" stroke="url(#rainbow)" stroke-width="3">
+    <animateTransform attributeName="transform" type="rotate" from="0 300 200" to="360 300 200" dur="10s" repeatCount="indefinite"/>
+  </circle>
 
-> ✨ *Designed with love, neon and lots of coffee.* — **Helal**
+  <!-- Center text (SMD inside circle with slow blink) -->
+  <text x="300" y="215" text-anchor="middle" font-size="52" font-weight="bold" font-family="Segoe UI, Verdana, sans-serif" fill="url(#rainbow)">
+    SIFU×SIXU
+    <animate attributeName="opacity" values="1;0.3;1" dur="4s" repeatCount="indefinite"/>
+  </text>
 
----
-
-## 🌟 Neon Highlights (What makes this special)
-- 🔥 Full Neon Themed README (animated GIF + typing SVG + neon dividers)  
-- 💬 Messenger / WhatsApp / Facebook / Telegram / YouTube Neon Buttons (click → open)  
-- 💖 Big Neon Love animation (pure neon heart)  
-- 🚗 Fully Neon Car animation (neon car with trail)  
-- 🧩 Detailed features, install & usage examples — premium doc style  
-- ⭐ Showcases Helal as sole developer & owner (everywhere Helal)  
-
----
-
-<p align="center">
-  <!-- Neon Heart -->
-  <img src="https://media.giphy.com/media/l0MYB8Ory7Hqefo9a/giphy.gif" width="220" alt="neon heart"/>
-  &nbsp;&nbsp;
-  <!-- Neon Car -->
-  <img src="https://media.giphy.com/media/xT0xezQGU5xCDJuCPe/giphy.gif" width="420" alt="neon car"/>
-</p>
-
----
-
-## 🚀 Features (Detailed)
-- **🤖 Auto Chat & AI** — Natural responses, multi-language friendly, auto-learn mini phrases.  
-- **🎨 Photo Editor** — Crop, filter, stickers, auto enhancements.  
-- **🖼️ Image Generation** — Text→Image via AI endpoints.  
-- **📽️ Video Downloader** — YouTube/Facebook/TikTok/Instagram supported.  
-- **🎮 Interactive Games** — 20+ games (quiz, dice, slots, fight, ship).  
-- **🛡️ Group Tools** — AntiSpam, AutoReact, Welcome, Kick, Re-add via admin.  
-- **🔐 Owner Tools** — Fork link, API key viewer, restart, backup.  
-- **⚡ Fast & Modular** — Easy commands folder, quick addition of new modules.
-
----
-
-## 🧭 Commands (Quick list)
+  <!-- Footer text -->
+  <text x="50%" y="360" text-anchor="middle" font-size="20" font-family="Segoe UI, Verdana, sans-serif" fill="url(#rainbow)">
+    ➪ SIZUKA BOT CREATED BY SIFAT ☢︎︎
+  </text>
+</svg>
