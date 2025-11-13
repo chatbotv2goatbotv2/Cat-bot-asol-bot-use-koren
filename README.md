@@ -19,61 +19,48 @@
     </linearGradient>
   </defs>
 
-  <!-- Dark background -->
-  <rect width="100%" height="100%" fill="#0a0a0a"/>
+  <rect width="100%" height="100%" fill="#050505"/>
 
-  <!-- Rainbow Dots Background -->
   <g>
-    <circle cx="100" cy="100" r="4" fill="url(#rainbow)">
-      <animate attributeName="cy" values="100;380;100" dur="6s" repeatCount="indefinite"/>
-      <animate attributeName="cx" values="100;500;100" dur="12s" repeatCount="indefinite"/>
+    <circle cx="120" cy="90" r="4" fill="url(#rainbow)">
+      <animate attributeName="cy" values="90;350;90" dur="6s" repeatCount="indefinite"/>
+      <animate attributeName="cx" values="120;520;120" dur="10s" repeatCount="indefinite"/>
     </circle>
     <circle cx="400" cy="200" r="3" fill="url(#rainbow)">
-      <animate attributeName="cy" values="200;50;200" dur="8s" repeatCount="indefinite"/>
-      <animate attributeName="cx" values="400;100;400" dur="10s" repeatCount="indefinite"/>
+      <animate attributeName="cy" values="200;80;200" dur="8s" repeatCount="indefinite"/>
+      <animate attributeName="cx" values="400;140;400" dur="9s" repeatCount="indefinite"/>
     </circle>
-    <circle cx="250" cy="300" r="5" fill="url(#rainbow)">
-      <animate attributeName="cy" values="300;80;300" dur="7s" repeatCount="indefinite"/>
-      <animate attributeName="cx" values="250;550;250" dur="9s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="500" cy="120" r="4" fill="url(#rainbow)">
-      <animate attributeName="cy" values="120;350;120" dur="11s" repeatCount="indefinite"/>
-      <animate attributeName="cx" values="500;200;500" dur="13s" repeatCount="indefinite"/>
+    <circle cx="260" cy="280" r="5" fill="url(#rainbow)">
+      <animate attributeName="cy" values="280;100;280" dur="7s" repeatCount="indefinite"/>
+      <animate attributeName="cx" values="260;540;260" dur="9s" repeatCount="indefinite"/>
     </circle>
   </g>
 
-  <!-- Outer rainbow border -->
   <rect x="10" y="10" width="580" height="380" rx="20" stroke="url(#rainbow)" stroke-width="4" fill="transparent">
     <animate attributeName="stroke-dasharray" values="20,10;50,5;10,20;20,10" dur="2s" repeatCount="indefinite"/>
   </rect>
 
-  <!-- Inner rainbow border (double effect) -->
   <rect x="16" y="16" width="568" height="368" rx="18" stroke="url(#rainbow)" stroke-width="3" fill="transparent">
     <animate attributeName="stroke-dasharray" values="10,5;30,10;5,15;10,5" dur="2s" repeatCount="indefinite"/>
   </rect>
 
-  <!-- Glass box -->
   <rect x="50" y="40" width="500" height="320" rx="20" fill="#1118" stroke="#fff2" stroke-width="1.5"/>
 
-  <!-- Title text -->
-  <text x="50%" y="90" text-anchor="middle" font-size="42" font-family="Segoe UI, Verdana, sans-serif" fill="url(#rainbow)">
-    ☠️ ☠️ MD SIFAT ☠️ ☠️ 
+  <text x="50%" y="90" text-anchor="middle" font-size="40" font-family="Orbitron, sans-serif" fill="url(#rainbow)">
+    💫 HELAL CAT BOT 💫
     <animateTransform attributeName="transform" type="scale" values="1;1.03;1" dur="3s" repeatCount="indefinite"/>
   </text>
 
-  <!-- Circle border around text -->
   <circle cx="300" cy="200" r="62" fill="none" stroke="url(#rainbow)" stroke-width="3">
     <animateTransform attributeName="transform" type="rotate" from="0 300 200" to="360 300 200" dur="10s" repeatCount="indefinite"/>
   </circle>
 
-  <!-- Center text (SMD inside circle with slow blink) -->
-  <text x="300" y="215" text-anchor="middle" font-size="52" font-weight="bold" font-family="Segoe UI, Verdana, sans-serif" fill="url(#rainbow)">
-    SIFU×SIXU
+  <text x="300" y="215" text-anchor="middle" font-size="50" font-weight="bold" font-family="Orbitron, sans-serif" fill="url(#rainbow)">
+    HELAL 💥
     <animate attributeName="opacity" values="1;0.3;1" dur="4s" repeatCount="indefinite"/>
   </text>
 
-  <!-- Footer text -->
-  <text x="50%" y="360" text-anchor="middle" font-size="20" font-family="Segoe UI, Verdana, sans-serif" fill="url(#rainbow)">
-    ➪ SIZUKA BOT CREATED BY SIFAT ☢︎︎
+  <text x="50%" y="360" text-anchor="middle" font-size="18" font-family="Segoe UI, Verdana, sans-serif" fill="url(#rainbow)">
+    ⚡ Developed By Helal ⚡
   </text>
 </svg>
